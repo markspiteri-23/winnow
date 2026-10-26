@@ -2,6 +2,7 @@ import { statSync } from "node:fs";
 import path from "node:path";
 import { parseArgs } from "node:util";
 import { ExifTool } from "exiftool-vendored";
+import { measureShots, type MetricsResult } from "../core/metrics.ts";
 import { cacheDir } from "../core/paths.ts";
 import { previewShots, type PreviewResult } from "../core/preview.ts";
 import { scanFolder, type ScanResult } from "../core/scan.ts";
@@ -11,6 +12,7 @@ const HELP = `winnow - local photo culler (no cloud)
 Usage:
   winnow scan <folder> [--json]       List shots (RAW+JPEG pairs collapsed) with EXIF
   winnow previews <folder> [--json]   Extract/cache the best preview per shot and report its size
+  winnow metrics <folder> [--json]    Sharpness, noise and exposure per shot (from its preview)
 
 Options:
   --json     Machine-readable output
@@ -55,6 +57,23 @@ function previewTable(scan: ScanResult, result: PreviewResult, seconds: number):
   return out.join("\n") + "\n";
 }
 
+function metricsTable(root: string, result: MetricsResult, seconds: number): string {
+  const rows = result.metrics.map((m) => [
+    path.relative(root, m.shotId),
+    m.sharpness.toFixed(1),
+    m.sharpnessRaw.toFixed(1),
+    m.noise.toFixed(1),
+    m.exposure.shadowsPct.toFixed(1),
+    m.exposure.highlightsPct.toFixed(1),
+    m.exposure.meanLuma.toFixed(0),
+    m.lowConfidence ? "low" : "ok",
+  ]);
+  const out = render(["shot", "sharp", "sharpRaw", "noise", "shadow%", "clip%", "luma", "confidence"], rows);
+  for (const e of result.errors) out.push(`error: ${path.relative(root, e.path)}: ${e.error}`);
+  out.push(`${result.metrics.length} shots measured, ${result.errors.length} errors, ${seconds.toFixed(2)}s`);
+  return out.join("\n") + "\n";
+}
+
 export async function main(argv: string[]): Promise<number> {
   const { values, positionals } = parseArgs({
     args: argv,
@@ -70,7 +89,7 @@ export async function main(argv: string[]): Promise<number> {
     process.stdout.write(HELP);
     return 0;
   }
-  if ((command !== "scan" && command !== "previews") || !folder) {
+  if (!["scan", "previews", "metrics"].includes(command) || !folder) {
     process.stderr.write(`winnow: unknown command or missing folder\n\n${HELP}`);
     return 2;
   }
@@ -83,6 +102,18 @@ export async function main(argv: string[]): Promise<number> {
   try {
     const start = performance.now();
     const result = await scanFolder(root, et);
+    if (command === "metrics") {
+      const previews = await previewShots(result.shots, et, cacheDir());
+      const orientation = new Map(result.shots.map((s) => [s.id, s.orientation]));
+      const measured = await measureShots(
+        previews.previews.map((p) => ({ shotId: p.shotId, path: p.path, orientation: orientation.get(p.shotId) ?? null, lowConfidence: p.lowConfidence })),
+      );
+      const seconds = (performance.now() - start) / 1000;
+      const errors = [...result.errors, ...previews.errors, ...measured.errors];
+      const text = metricsTable(root, { metrics: measured.metrics, errors }, seconds);
+      process.stdout.write(values.json ? JSON.stringify({ root, metrics: measured.metrics, errors }, null, 2) + "\n" : text);
+      return 0;
+    }
     if (command === "previews") {
       const previews = await previewShots(result.shots, et, cacheDir());
       const seconds = (performance.now() - start) / 1000;

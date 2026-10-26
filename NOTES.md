@@ -28,8 +28,21 @@
 - `previewMinLongSide` = 1000 is PROVISIONAL, not measured; recalibrate in Phase 4. Guard test scans `src/` for `sharp(` outside image.ts (test files exempt: they generate images).
 - Real ARW: `WINNOW_FIXTURES=... npx vitest run src/core/preview.test.ts` prints source and size; not yet run.
 
+### Phase 4: Sharpness + exposure (real-fixture checks PENDING: needs `$WINNOW_FIXTURES`)
+- `src/core/metrics.ts`: preview -> `loadOriented` greyscale at `analysisMaxSide` -> [1 2 1] blur -> Sobel energy per 64px tile; sharpness = sqrt of p90 tile energy minus the analytic noise energy (5.47 * sigma^2). Noise = Immerkaer sigma, median of the flattest 25% of tiles. Exposure = % luma <= 3, % >= 252, mean luma. `winnow metrics <folder> [--json]`.
+- Generated 1200x800 blocks (sharp / blur(4) / blur(4)+noise sigma 12): sharpness 103.5 / 24.4 / 29.6 (34.5 uncorrected); noise 0.06 / 0.32 / 7.6 (downscale averages some noise away).
+- Gotchas: sharp's greyscale raw output keeps 3 channels (metrics read channel 0). Fine uniform texture (sand, foliage at distance) reads as noise and loses sharpness; exposure is on luma, so a single blown channel is missed.
+- Preview vs full res: `WINNOW_FIXTURES=... npx tsx scripts/compare-sharpness.ts 10` (full = embedded/camera JPEG at native size; sharp cannot decode RAW). Not yet run; blurry-below-sharp ranking on real fixtures also not yet checked.
+- All 6 analysis values in weights.json are PROVISIONAL; previewMinLongSide still not recalibrated (needs the comparison above).
+
 ## Measured values
 
 | Weight | Value | Measured on | Notes |
 | --- | --- | --- | --- |
 | previewMinLongSide | 1000 | not measured (provisional) | Recalibrate in Phase 4 |
+| analysisMaxSide | 1024 | not measured (provisional) | Phase 4 |
+| sharpnessTileSize | 64 | not measured (provisional) | px at analysisMaxSide |
+| sharpnessPercentile | 90 | not measured (provisional) | |
+| noiseFlatTileFraction | 0.25 | not measured (provisional) | |
+| shadowClipLevel | 3 | not measured (provisional) | luma 0-255 |
+| highlightClipLevel | 252 | not measured (provisional) | luma 0-255 |

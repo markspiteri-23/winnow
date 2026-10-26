@@ -4,6 +4,30 @@
     "previewMinLongSide": {
       "value": 1000,
       "calibratedOn": "PROVISIONAL (Phase 3): not yet measured on fixtures. Recalibrate in Phase 4 from preview-vs-full-res sharpness on $WINNOW_FIXTURES."
+    },
+    "analysisMaxSide": {
+      "value": 1024,
+      "calibratedOn": "PROVISIONAL (Phase 4): analysis parameter, not yet measured on $WINNOW_FIXTURES. Long side of the downscaled image metrics run on."
+    },
+    "sharpnessTileSize": {
+      "value": 64,
+      "calibratedOn": "PROVISIONAL (Phase 4): analysis parameter, not yet measured on $WINNOW_FIXTURES. Tile edge in px at analysisMaxSide."
+    },
+    "sharpnessPercentile": {
+      "value": 90,
+      "calibratedOn": "PROVISIONAL (Phase 4): analysis parameter, not yet measured on $WINNOW_FIXTURES. Shot sharpness = this percentile of tile Tenengrad, so a sharp subject on a soft background still counts."
+    },
+    "noiseFlatTileFraction": {
+      "value": 0.25,
+      "calibratedOn": "PROVISIONAL (Phase 4): analysis parameter, not yet measured on $WINNOW_FIXTURES. Share of lowest-gradient tiles used for the noise estimate."
+    },
+    "shadowClipLevel": {
+      "value": 3,
+      "calibratedOn": "PROVISIONAL (Phase 4): analysis parameter, not yet measured on $WINNOW_FIXTURES. Luma (0-255) at or below which a pixel counts as crushed."
+    },
+    "highlightClipLevel": {
+      "value": 252,
+      "calibratedOn": "PROVISIONAL (Phase 4): analysis parameter, not yet measured on $WINNOW_FIXTURES. Luma (0-255) at or above which a pixel counts as clipped."
     }
   }
 }
