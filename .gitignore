@@ -1,0 +1,24 @@
+node_modules/
+dist/
+out/
+release/
+coverage/
+*.log
+.DS_Store
+Thumbs.db
+.env
+# Never commit photos (fixtures live in $WINNOW_FIXTURES)
+*.arw
+*.ARW
+*.cr2
+*.CR2
+*.cr3
+*.CR3
+*.nef
+*.NEF
+*.dng
+*.DNG
+*.jpg
+*.JPG
+*.jpeg
+*.JPEG

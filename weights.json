@@ -1,0 +1,4 @@
+{
+  "_comment": "Thresholds/weights. Each entry is { \"value\": number, \"calibratedOn\": string }. Calibrate on $WINNOW_FIXTURES, never guess. Measured values go in NOTES.md.",
+  "values": {}
+}

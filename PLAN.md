@@ -47,7 +47,7 @@ Calibration: note your usage meter before and after Phases 0 and 1. That shows w
 
 Cut list if budget runs short (in order): Phase 5, Phase 12 embed mode, Phase 16 slider. Everything else is core.
 
-### [ ] Phase 0 (S): Scaffold + CI
+### [x] Phase 0 (S): Scaffold + CI
 Build: strict TS, vitest, `tsc --noEmit` script, `src/core` + `src/cli`, one test, `.gitignore`, MIT licence, README stub, `weights.json` (every value has `calibratedOn`), `NOTES.md`, `THIRD_PARTY_LICENSES.md` stub, `.npmrc` with `save-exact=true`, `.github/dependabot.yml` (monthly npm, no auto-merge). Node script that fails if `webSecurity: false` or `nodeIntegration: true` appears. GitHub Actions on macos-latest and windows-latest: `npm ci`, `tsc --noEmit`, `npm test`, security script.
 Done when: both CI jobs green, `npx tsx src/cli/index.ts --help` works.
 Prompt: "Do Phase 0 from PLAN.md."
