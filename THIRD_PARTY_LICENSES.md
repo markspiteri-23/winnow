@@ -1,7 +1,11 @@
 # Third-party licences
 
-Runtime dependencies bundled with Winnow and their licences. Filled in as dependencies are added (Phase 17 completes it for release).
+Runtime components bundled with Winnow and their licences. Phase 17 completes this for release (full licence texts).
 
-| Package | Licence |
+| Component | Licence |
 | --- | --- |
-| _none yet_ | |
+| Electron (includes Chromium, see `LICENSES.chromium.html` in the app) | MIT |
+| sharp | Apache-2.0 |
+| libvips (`@img/sharp-libvips-*`, dynamically linked) | LGPL-3.0-or-later |
+| exiftool-vendored, exiftool-vendored.pl / .exe | MIT |
+| ExifTool by Phil Harvey (bundled in exiftool-vendored.pl / .exe) | Perl terms: Artistic License or GPL |

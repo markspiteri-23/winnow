@@ -12,7 +12,8 @@
     "resolveJsonModule": true,
     "skipLibCheck": true,
     "noEmit": true,
+    "lib": ["ES2024", "DOM", "DOM.Iterable"],
     "types": ["node"]
   },
-  "include": ["src"]
+  "include": ["src", "e2e", "electron.vite.config.ts"]
 }

@@ -52,7 +52,7 @@ Build: strict TS, vitest, `tsc --noEmit` script, `src/core` + `src/cli`, one tes
 Done when: both CI jobs green, `npx tsx src/cli/index.ts --help` works.
 Prompt: "Do Phase 0 from PLAN.md."
 
-### [ ] Phase 1 (M): Packaging smoke test
+### [x] Phase 1 (M): Packaging smoke test
 Build: minimal Electron app (contextIsolation, sandbox, preload) that loads sharp and exiftool-vendored, processes a generated image, shows versions. electron-builder config with sharp and exiftool unpacked from the asar. CI builds the PACKAGED app on both OSes; a Playwright Electron test launches that build, scans a generated folder, asserts the result, and saves a screenshot as a CI artifact.
 Done when: packaged build passes on both OSes. Any native-module problem is fixed HERE, before features. Mac architecture choice is deferred to Phase 17.
 Prompt: "Do Phase 1 from PLAN.md. Packaging smoke test only, no features."

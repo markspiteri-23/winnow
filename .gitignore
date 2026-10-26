@@ -22,3 +22,6 @@ Thumbs.db
 *.JPG
 *.jpeg
 *.JPEG
+release/
+test-results/
+playwright-report/

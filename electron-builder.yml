@@ -1,0 +1,18 @@
+appId: org.winnow.app
+productName: Winnow
+directories:
+  output: release
+files:
+  - out/**
+  - package.json
+# Native binaries cannot run from inside the asar archive.
+asarUnpack:
+  - "**/node_modules/sharp/**"
+  - "**/node_modules/@img/**"
+  - "**/node_modules/exiftool-vendored.pl/**"
+  - "**/node_modules/exiftool-vendored.exe/**"
+mac:
+  target: dmg
+  identity: null
+win:
+  target: nsis
