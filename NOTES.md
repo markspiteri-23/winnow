@@ -43,6 +43,10 @@
 - Case-preserving rename everywhere: CLI `faucet`, productName/appId `Faucet`/`org.faucet.app`, preload global `window.faucet`, IPC `faucet:*`, env `FAUCET_FIXTURES`/`FAUCET_SMOKE_DIR`, cache dir `.../faucet` (old `~/Library/Caches/winnow` is orphaned; safe to delete by hand).
 - GitHub repo is still `markspiteri-23/winnow`; not renamed.
 
+### Phase 5: Autofocus-point sharpness (dead end, nothing built)
+- a6000 ARWs (26, exiftool 13 via exiftool-vendored): AFPointSelected `n/a`, AFPointsUsed and FocalPlaneAFPointsUsed `(none)`, no FocusLocation, FlexibleSpotPosition `0 0` in every file (modes seen: Multi, Wide, Tracking, Face Tracking, Manual).
+- Only FocusMode/AFAreaMode and FocusPosition2 (a distance step, not a frame position) exist, so no AF region can be located. Revisit only for other cameras (e.g. newer Sony FocusLocation, Canon/Nikon AF point tags).
+
 ## Measured values
 
 | Weight | Value | Measured on | Notes |

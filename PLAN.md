@@ -72,7 +72,7 @@ Build: downscale, light blur, then tile-based gradient (Tenengrad) sharpness; Sh
 Done when: generated-image test asserts order sharp > blurred AND sharp > blurred+noisy; real blurry fixtures (including the noisy night shot) rank below sharp ones.
 Prompt: "Do Phase 4 from PLAN.md. Metrics module and CLI command only."
 
-### [ ] Phase 5 (S, optional): Autofocus-point sharpness
+### [x] Phase 5 (S, optional): Autofocus-point sharpness
 Build: spike first. Check whether your a6000 ARW files expose the focus point through exiftool (tags vary by brand). If yes, also measure sharpness in a region around that point and add it to Metrics. If no, record that in NOTES.md and stop.
 Done when: either the AF region metric works on fixtures, or the dead end is recorded.
 Prompt: "Do Phase 5 from PLAN.md. Spike first, stop if no focus-point tags exist."
