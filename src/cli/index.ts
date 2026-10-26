@@ -2,18 +2,27 @@ import { statSync } from "node:fs";
 import path from "node:path";
 import { parseArgs } from "node:util";
 import { ExifTool } from "exiftool-vendored";
+import { cacheDir } from "../core/paths.ts";
+import { previewShots, type PreviewResult } from "../core/preview.ts";
 import { scanFolder, type ScanResult } from "../core/scan.ts";
 
 const HELP = `winnow - local photo culler (no cloud)
 
 Usage:
-  winnow scan <folder> [--json]   List shots (RAW+JPEG pairs collapsed) with EXIF
+  winnow scan <folder> [--json]       List shots (RAW+JPEG pairs collapsed) with EXIF
+  winnow previews <folder> [--json]   Extract/cache the best preview per shot and report its size
 
 Options:
   --json     Machine-readable output
   --apply    Write sidecars (default is dry-run)
   -h, --help Show this help
 `;
+
+function render(header: string[], rows: string[][]): string[] {
+  const widths = header.map((h, i) => Math.max(h.length, ...rows.map((r) => r[i]?.length ?? 0)));
+  const line = (r: string[]): string => r.map((c, i) => c.padEnd(widths[i] ?? 0)).join("  ").trimEnd();
+  return [line(header), ...rows.map(line)];
+}
 
 function table(result: ScanResult, seconds: number): string {
   const rows = result.shots.map((s) => [
@@ -25,13 +34,24 @@ function table(result: ScanResult, seconds: number): string {
     s.orientation?.toString() ?? "-",
     s.width && s.height ? `${s.width}x${s.height}` : "-",
   ]);
-  const header = ["shot", "files", "captured", "camera", "iso", "orient", "size"];
-  const widths = header.map((h, i) => Math.max(h.length, ...rows.map((r) => r[i]?.length ?? 0)));
-  const line = (r: string[]): string => r.map((c, i) => c.padEnd(widths[i] ?? 0)).join("  ").trimEnd();
-  const out = [line(header), ...rows.map(line)];
+  const out = render(["shot", "files", "captured", "camera", "iso", "orient", "size"], rows);
   for (const e of result.errors) out.push(`error: ${path.relative(result.root, e.path)}: ${e.error}`);
   const files = result.shots.reduce((n, s) => n + s.files.length, 0);
   out.push(`${result.shots.length} shots (${files} files), ${result.errors.length} errors, ${seconds.toFixed(2)}s`);
+  return out.join("\n") + "\n";
+}
+
+function previewTable(scan: ScanResult, result: PreviewResult, seconds: number): string {
+  const rows = result.previews.map((p) => [
+    path.relative(scan.root, p.shotId),
+    p.source,
+    `${p.width}x${p.height}`,
+    p.lowConfidence ? "low" : "ok",
+  ]);
+  const out = render(["shot", "preview", "size", "confidence"], rows);
+  for (const e of [...scan.errors, ...result.errors]) out.push(`error: ${path.relative(scan.root, e.path)}: ${e.error}`);
+  const low = result.previews.filter((p) => p.lowConfidence).length;
+  out.push(`${result.previews.length} previews (${low} low confidence), ${scan.errors.length + result.errors.length} errors, ${seconds.toFixed(2)}s`);
   return out.join("\n") + "\n";
 }
 
@@ -50,7 +70,7 @@ export async function main(argv: string[]): Promise<number> {
     process.stdout.write(HELP);
     return 0;
   }
-  if (command !== "scan" || !folder) {
+  if ((command !== "scan" && command !== "previews") || !folder) {
     process.stderr.write(`winnow: unknown command or missing folder\n\n${HELP}`);
     return 2;
   }
@@ -63,6 +83,13 @@ export async function main(argv: string[]): Promise<number> {
   try {
     const start = performance.now();
     const result = await scanFolder(root, et);
+    if (command === "previews") {
+      const previews = await previewShots(result.shots, et, cacheDir());
+      const seconds = (performance.now() - start) / 1000;
+      const json = { root, previews: previews.previews, errors: [...result.errors, ...previews.errors] };
+      process.stdout.write(values.json ? JSON.stringify(json, null, 2) + "\n" : previewTable(result, previews, seconds));
+      return 0;
+    }
     const seconds = (performance.now() - start) / 1000;
     process.stdout.write(values.json ? JSON.stringify(result, null, 2) + "\n" : table(result, seconds));
     return 0;

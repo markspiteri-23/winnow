@@ -1,3 +1,5 @@
+import weightsJson from "../../weights.json" with { type: "json" };
+
 export interface Weight {
   value: number;
   calibratedOn: string;
@@ -26,4 +28,13 @@ export function validateWeights(data: unknown): WeightsFile {
     }
   }
   return { values: values as Record<string, Weight> };
+}
+
+const loaded = validateWeights(weightsJson);
+
+/** Value of a named weight from weights.json; throws if it is missing. */
+export function weight(name: string): number {
+  const w = loaded.values[name];
+  if (!w) throw new Error(`weights: no entry '${name}'`);
+  return w.value;
 }

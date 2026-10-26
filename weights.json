@@ -1,4 +1,9 @@
 {
   "_comment": "Thresholds/weights. Each entry is { \"value\": number, \"calibratedOn\": string }. Calibrate on $WINNOW_FIXTURES, never guess. Measured values go in NOTES.md.",
-  "values": {}
+  "values": {
+    "previewMinLongSide": {
+      "value": 1000,
+      "calibratedOn": "PROVISIONAL (Phase 3): not yet measured on fixtures. Recalibrate in Phase 4 from preview-vs-full-res sharpness on $WINNOW_FIXTURES."
+    }
+  }
 }

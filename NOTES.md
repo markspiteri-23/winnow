@@ -22,7 +22,14 @@
 - Scan time, 1000 generated 1600px JPEGs, M-series Mac, maxProcs=3: 3.46 s (3.5 ms/file). `npx tsx scripts/bench-scan.ts 1000`.
 - Test gotcha: exiftool refuses to write a JPEG named .ARW, so fixtures are written as .jpg then renamed.
 
+### Phase 3: Previews + `loadOriented` (real-ARW check PENDING: needs `$WINNOW_FIXTURES`)
+- `src/core/preview.ts`: chain JpgFromRaw -> camera JPEG of the pair -> PreviewImage -> ThumbnailImage; RAW extracts cached as `<sha1(path+mtime+size)>.<tag>.jpg` in `cacheDir()/previews` (`src/core/paths.ts`). JPEG-only shots use the original file in place (read-only). `winnow previews <folder>`.
+- `loadOriented(file, orientation)` ignores the file's own tag and applies the RAW's. Gotcha: sharp does NOT honour flip/flop vs rotate chain order (docs say flip after rotate; observed differs), so mirror and rotate run as two pipelines. Tests check all 8 against libvips autoOrient.
+- `previewMinLongSide` = 1000 is PROVISIONAL, not measured; recalibrate in Phase 4. Guard test scans `src/` for `sharp(` outside image.ts (test files exempt: they generate images).
+- Real ARW: `WINNOW_FIXTURES=... npx vitest run src/core/preview.test.ts` prints source and size; not yet run.
+
 ## Measured values
 
 | Weight | Value | Measured on | Notes |
 | --- | --- | --- | --- |
+| previewMinLongSide | 1000 | not measured (provisional) | Recalibrate in Phase 4 |
