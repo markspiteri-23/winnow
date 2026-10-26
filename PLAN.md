@@ -67,7 +67,7 @@ Build: preview fallback chain (full-size embedded JPEG, then medium preview, the
 Done when: orientation tests pass on both OSes; a real ARW fixture yields a usable preview and reports its size.
 Prompt: "Do Phase 3 from PLAN.md."
 
-### [ ] Phase 4 (M): Sharpness + exposure
+### [x] Phase 4 (M): Sharpness + exposure
 Build: downscale, light blur, then tile-based gradient (Tenengrad) sharpness; Shot sharpness = high percentile of tiles. Noise estimate from flat regions, used to correct sharpness. Exposure = % crushed shadows, % clipped highlights, mean luma. `faucet metrics <folder> [--json]`. Compare preview-based vs full-resolution sharpness on 10 real fixtures and record it in NOTES.md.
 Done when: generated-image test asserts order sharp > blurred AND sharp > blurred+noisy; real blurry fixtures (including the noisy night shot) rank below sharp ones.
 Prompt: "Do Phase 4 from PLAN.md. Metrics module and CLI command only."

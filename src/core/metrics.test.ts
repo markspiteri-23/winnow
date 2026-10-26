@@ -1,4 +1,4 @@
-import { mkdtempSync, rmSync } from "node:fs";
+import { existsSync, mkdtempSync, readFileSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import sharp from "sharp";
@@ -123,4 +123,24 @@ describe("measureShots", () => {
     expect(res.metrics).toHaveLength(1);
     expect(res.metrics[0]!.lowConfidence).toBe(true);
   });
+});
+
+// Real-photo check: only when $FAUCET_FIXTURES is set (never in CI). Variants come from scripts/make-fixtures.ts.
+const fixtures = process.env.FAUCET_FIXTURES;
+const manifestPath = path.join(fixtures ?? "", "generated", "manifest.json");
+describe.skipIf(!fixtures || !existsSync(manifestPath))("real-photo blur variants", () => {
+  it("ranks every sharp frame of a scene above every blurry one (incl. dark noisy night)", async () => {
+    const manifest = JSON.parse(readFileSync(manifestPath, "utf8")) as { source: string; file: string; label: string }[];
+    const bySource = new Map<string, { file: string; label: string; sharpness: number }[]>();
+    for (const m of manifest) {
+      const file = path.join(path.dirname(manifestPath), m.file);
+      const { sharpness } = await measure(file);
+      bySource.set(m.source, [...(bySource.get(m.source) ?? []), { file: m.file, label: m.label, sharpness }]);
+    }
+    for (const [source, frames] of bySource) {
+      const minSharp = Math.min(...frames.filter((f) => f.label === "sharp").map((f) => f.sharpness));
+      const blurry = frames.filter((f) => f.label === "blurry");
+      for (const f of blurry) expect(f.sharpness, `${source}: ${f.file}`).toBeLessThan(minSharp);
+    }
+  }, 120_000);
 });
