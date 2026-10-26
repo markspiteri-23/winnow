@@ -62,7 +62,7 @@ Build: recursive scan of supported files (ARW, CR2, CR3, NEF, DNG, JPG). Collaps
 Done when: tests on generated JPEGs cover pairing, case-insensitivity, missing dates, corrupt file; report scan time for 1000 files.
 Prompt: "Do Phase 2 from PLAN.md."
 
-### [ ] Phase 3 (M): Previews + `loadOriented`
+### [x] Phase 3 (M): Previews + `loadOriented`
 Build: preview fallback chain (full-size embedded JPEG, then medium preview, then thumbnail), saved to cache. `lowConfidence` when the preview's long side is below a `weights.json` value. `loadOriented()` in `src/core/image.ts` as the ONLY pixel loader, using orientation from the RAW's EXIF. Test all 8 orientations with generated images. Test that fails if `sharp(` appears outside `image.ts`.
 Done when: orientation tests pass on both OSes; a real ARW fixture yields a usable preview and reports its size.
 Prompt: "Do Phase 3 from PLAN.md."

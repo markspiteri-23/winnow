@@ -22,18 +22,20 @@
 - Scan time, 1000 generated 1600px JPEGs, M-series Mac, maxProcs=3: 3.46 s (3.5 ms/file). `npx tsx scripts/bench-scan.ts 1000`.
 - Test gotcha: exiftool refuses to write a JPEG named .ARW, so fixtures are written as .jpg then renamed.
 
-### Phase 3: Previews + `loadOriented` (real-ARW check PENDING: needs `$FAUCET_FIXTURES`)
+### Phase 3: Previews + `loadOriented`
 - `src/core/preview.ts`: chain JpgFromRaw -> camera JPEG of the pair -> PreviewImage -> ThumbnailImage; RAW extracts cached as `<sha1(path+mtime+size)>.<tag>.jpg` in `cacheDir()/previews` (`src/core/paths.ts`). JPEG-only shots use the original file in place (read-only). `faucet previews <folder>`.
 - `loadOriented(file, orientation)` ignores the file's own tag and applies the RAW's. Gotcha: sharp does NOT honour flip/flop vs rotate chain order (docs say flip after rotate; observed differs), so mirror and rotate run as two pipelines. Tests check all 8 against libvips autoOrient.
 - `previewMinLongSide` = 1000 is PROVISIONAL, not measured; recalibrate in Phase 4. Guard test scans `src/` for `sharp(` outside image.ts (test files exempt: they generate images).
-- Real ARW: `FAUCET_FIXTURES=... npx vitest run src/core/preview.test.ts` prints source and size; not yet run.
+- Real ARW check passed 2026-10-26: 26 ILCE-6000 ARWs, all PreviewImage 1616x1080 (no JpgFromRaw in A6000 files), none lowConfidence.
 
 ### Phase 4: Sharpness + exposure (real-fixture checks PENDING: needs `$FAUCET_FIXTURES`)
 - `src/core/metrics.ts`: preview -> `loadOriented` greyscale at `analysisMaxSide` -> [1 2 1] blur -> Sobel energy per 64px tile; sharpness = sqrt of p90 tile energy minus the analytic noise energy (5.47 * sigma^2). Noise = Immerkaer sigma, median of the flattest 25% of tiles. Exposure = % luma <= 3, % >= 252, mean luma. `faucet metrics <folder> [--json]`.
 - Generated 1200x800 blocks (sharp / blur(4) / blur(4)+noise sigma 12): sharpness 103.5 / 24.4 / 29.6 (34.5 uncorrected); noise 0.06 / 0.32 / 7.6 (downscale averages some noise away).
 - Gotchas: sharp's greyscale raw output keeps 3 channels (metrics read channel 0). Fine uniform texture (sand, foliage at distance) reads as noise and loses sharpness; exposure is on luma, so a single blown channel is missed.
 - Preview vs full res: `FAUCET_FIXTURES=... npx tsx scripts/compare-sharpness.ts 10` (full = embedded/camera JPEG at native size; sharp cannot decode RAW). Not yet run; blurry-below-sharp ranking on real fixtures also not yet checked.
-- All 6 analysis values in weights.json are PROVISIONAL; previewMinLongSide still not recalibrated (needs the comparison above).
+- Real run 2026-10-26 (26 A6000 ARWs + 12 JPEGs, 11 of them Lightroom exports): 0 errors, 6.9 s. Preview (1024) vs native preview (1616) Spearman 0.952 on 10 ARWs; true full-res not testable (A6000 embeds no full-size JPEG). Lowest sharpness = the 3 ISO 3200 night ARWs (17-32), but they are also dark (luma 41-59), so blur vs dark scene is not yet separated. Blur ranking still PENDING user labels.
+- Noise reads ~1 or less even at ISO 3200-6400: camera previews are denoised and the 1024 downscale averages noise away, so the correction rarely matters on real files.
+- All 6 analysis values in weights.json are PROVISIONAL; previewMinLongSide 1000 is fine for A6000 (1616 px previews) but not calibrated across cameras.
 
 ### Rename: Winnow -> Faucet
 - Case-preserving rename everywhere: CLI `faucet`, productName/appId `Faucet`/`org.faucet.app`, preload global `window.faucet`, IPC `faucet:*`, env `FAUCET_FIXTURES`/`FAUCET_SMOKE_DIR`, cache dir `.../faucet` (old `~/Library/Caches/winnow` is orphaned; safe to delete by hand).
