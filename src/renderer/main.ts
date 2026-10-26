@@ -1,14 +1,14 @@
-import type { WinnowApi } from "../preload/index.ts";
+import type { FaucetApi } from "../preload/index.ts";
 
 declare global {
   interface Window {
-    winnow: WinnowApi;
+    faucet: FaucetApi;
   }
 }
 
 const out = document.getElementById("result");
 if (out) {
-  window.winnow
+  window.faucet
     .smoke()
     .then((result) => {
       out.textContent = JSON.stringify(result, null, 2);

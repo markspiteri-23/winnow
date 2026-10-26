@@ -1,4 +1,4 @@
-# Winnow: product + phase plan (macOS + Windows)
+# Faucet: product + phase plan (macOS + Windows)
 
 ## Pitch
 Point it at a shoot folder. It groups the near-duplicates, throws out the obvious losers (blurry, missed focus, blown exposure, blinks), suggests the best frame in each group, and lets you confirm or override with the keyboard. Output is XMP sidecars, so your photos and your catalog stay untouched.
@@ -7,7 +7,7 @@ Mirrors the three signals Lightroom's Assisted Culling exposes (subject sharpnes
 
 ## Honest positioning
 - v1 promise: "removes the obvious 60% and suggests a best frame per burst". NOT "picks your best photo". Judging expression, composition and moment needs trained models.
-- Prior art exists: Facet (Python, large local gallery/culling server), Selects (Python + React desktop app), Nitido (browser PWA), Cullify (small prototype). Winnow's bet: a small installable desktop app for Mac and Windows, fast start, keyboard-first review, safe sidecar output. Plausible gap, not proven.
+- Prior art exists: Facet (Python, large local gallery/culling server), Selects (Python + React desktop app), Nitido (browser PWA), Cullify (small prototype). Faucet's bet: a small installable desktop app for Mac and Windows, fast start, keyboard-first review, safe sidecar output. Plausible gap, not proven.
 
 ## Scope
 In v1: folder scan, RAW+JPEG pairing, burst/duplicate groups, sharpness, exposure, face + eyes-open, per-group pick, review UI, XMP ratings/labels, explainable reasons, installers for macOS and Windows.
@@ -19,7 +19,7 @@ TypeScript + Electron, one package, shared core used by CLI and app. One languag
 ## Three principles that remove many problems at once
 1. **Compare within the group.** Judge each frame against its burst siblings, not a fixed threshold. This cancels ISO noise, lens and camera differences and reduces calibration work.
 2. **Prove packaging on day one.** Phase 1 ships an empty packaged app that loads sharp and exiftool on both CI OSes, before any feature exists.
-3. **Cull before import.** Recommend running Winnow before Lightroom imports the shoot, so sidecars already exist when Lightroom first sees the photos. Avoids refresh and metadata-conflict problems.
+3. **Cull before import.** Recommend running Faucet before Lightroom imports the shoot, so sidecars already exist when Lightroom first sees the photos. Avoids refresh and metadata-conflict problems.
 
 ## Decisions to confirm before Phase 0 (defaults in bold)
 1. Stack: **TypeScript + Electron**.
@@ -38,7 +38,7 @@ TypeScript + Electron, one package, shared core used by CLI and app. One languag
 
 ## Fixtures
 - CI/unit tests: generated images only (sharp makes blurred, noisy, clipped, near-duplicate, rotated images). No photos in git.
-- Real set outside the repo at `$WINNOW_FIXTURES`, ~60 photos: 2 bursts of 5+, 3 blink shots, 5 deliberately blurry (include one blurry high-ISO night shot), 3 over/under-exposed, 1 bokeh portrait, 1 group shot, 5 singles you love. Mark ~40 as "tune" and ~20 as "hold-out" in Phase 10. Later add photos from friends with other cameras.
+- Real set outside the repo at `$FAUCET_FIXTURES`, ~60 photos: 2 bursts of 5+, 3 blink shots, 5 deliberately blurry (include one blurry high-ISO night shot), 3 over/under-exposed, 1 bokeh portrait, 1 group shot, 5 singles you love. Mark ~40 as "tune" and ~20 as "hold-out" in Phase 10. Later add photos from friends with other cameras.
 
 ## Phases
 Each phase = one fresh Claude Code session. Run `/clear` before starting. Size: S small, M medium. Tick when done. If a phase overruns, stop at green tests and split.
@@ -58,7 +58,7 @@ Done when: packaged build passes on both OSes. Any native-module problem is fixe
 Prompt: "Do Phase 1 from PLAN.md. Packaging smoke test only, no features."
 
 ### [x] Phase 2 (S): Scan, pairing, EXIF
-Build: recursive scan of supported files (ARW, CR2, CR3, NEF, DNG, JPG). Collapse RAW+JPEG pairs (case-insensitive basename) into one `Shot`. Via exiftool: sub-second capture time, camera model, ISO, EXIF orientation, dimensions. Missing or implausible date handled as null. Originals opened read-only; one bad file is recorded, never aborts. `winnow scan <folder>`.
+Build: recursive scan of supported files (ARW, CR2, CR3, NEF, DNG, JPG). Collapse RAW+JPEG pairs (case-insensitive basename) into one `Shot`. Via exiftool: sub-second capture time, camera model, ISO, EXIF orientation, dimensions. Missing or implausible date handled as null. Originals opened read-only; one bad file is recorded, never aborts. `faucet scan <folder>`.
 Done when: tests on generated JPEGs cover pairing, case-insensitivity, missing dates, corrupt file; report scan time for 1000 files.
 Prompt: "Do Phase 2 from PLAN.md."
 
@@ -68,7 +68,7 @@ Done when: orientation tests pass on both OSes; a real ARW fixture yields a usab
 Prompt: "Do Phase 3 from PLAN.md."
 
 ### [ ] Phase 4 (M): Sharpness + exposure
-Build: downscale, light blur, then tile-based gradient (Tenengrad) sharpness; Shot sharpness = high percentile of tiles. Noise estimate from flat regions, used to correct sharpness. Exposure = % crushed shadows, % clipped highlights, mean luma. `winnow metrics <folder> [--json]`. Compare preview-based vs full-resolution sharpness on 10 real fixtures and record it in NOTES.md.
+Build: downscale, light blur, then tile-based gradient (Tenengrad) sharpness; Shot sharpness = high percentile of tiles. Noise estimate from flat regions, used to correct sharpness. Exposure = % crushed shadows, % clipped highlights, mean luma. `faucet metrics <folder> [--json]`. Compare preview-based vs full-resolution sharpness on 10 real fixtures and record it in NOTES.md.
 Done when: generated-image test asserts order sharp > blurred AND sharp > blurred+noisy; real blurry fixtures (including the noisy night shot) rank below sharp ones.
 Prompt: "Do Phase 4 from PLAN.md. Metrics module and CLI command only."
 
@@ -78,7 +78,7 @@ Done when: either the AF region metric works on fixtures, or the dead end is rec
 Prompt: "Do Phase 5 from PLAN.md. Spike first, stop if no focus-point tags exist."
 
 ### [ ] Phase 6 (M): Burst / duplicate grouping
-Build: dHash per Shot; sort by sub-second capture time; time-gap + Hamming distance join a group; single-link clustering; prefer splitting over merging. Fallback to sequential filename numbers when dates are missing or implausible. Per-camera time offset in config (keyed by camera model) for multi-camera shoots. `winnow groups <folder> [--json]`.
+Build: dHash per Shot; sort by sub-second capture time; time-gap + Hamming distance join a group; single-link clustering; prefer splitting over merging. Fallback to sequential filename numbers when dates are missing or implausible. Per-camera time offset in config (keyed by camera model) for multi-camera shoots. `faucet groups <folder> [--json]`.
 Done when: fixture bursts group correctly, singles stay alone, RAW+JPEG pairs never group with themselves. Print distances for same-burst vs different-scene pairs, pick the threshold from data, record it.
 Prompt: "Do Phase 6 from PLAN.md."
 
@@ -93,12 +93,12 @@ Done when: the 3 blink fixtures flag correctly, group shot reports per-face resu
 Prompt: "Do Phase 8 from PLAN.md."
 
 ### [ ] Phase 9 (M): Scoring, cache, workers
-Build: scores relative to group siblings (rank or z-score within group). Conservative hard-rejects: severe blur (skipped when `lowConfidence`), heavy clipping, eyes closed only if another frame in the group has them open. Best-per-group pick. `reasons[]` on every verdict. Cache keyed by path+mtime+size with correct invalidation. Worker pool with modest concurrency, progress, cancel, resume. One failing file never aborts. `winnow cull <folder> [--json]`.
+Build: scores relative to group siblings (rank or z-score within group). Conservative hard-rejects: severe blur (skipped when `lowConfidence`), heavy clipping, eyes closed only if another frame in the group has them open. Best-per-group pick. `reasons[]` on every verdict. Cache keyed by path+mtime+size with correct invalidation. Worker pool with modest concurrency, progress, cancel, resume. One failing file never aborts. `faucet cull <folder> [--json]`.
 Done when: fixtures look sane; second run near-instant; benchmark on 2,000 generated images recorded with a time budget in NOTES.md.
 Prompt: "Do Phase 9 from PLAN.md."
 
 ### [ ] Phase 10 (S): Eval harness
-Build: `labels.json` (your pick/reject per fixture, each marked `tune` or `holdout`). `winnow eval` reports % of your rejects caught, % of your picks surfaced as group-best, false-reject count, separately for tune and hold-out. Commit baseline numbers (JSON only, no photos). Regression script fails if hold-out gets worse than baseline beyond a tolerance. Script that fails a release tag if any `weights.json` value lacks `calibratedOn`.
+Build: `labels.json` (your pick/reject per fixture, each marked `tune` or `holdout`). `faucet eval` reports % of your rejects caught, % of your picks surfaced as group-best, false-reject count, separately for tune and hold-out. Commit baseline numbers (JSON only, no photos). Regression script fails if hold-out gets worse than baseline beyond a tolerance. Script that fails a release tag if any `weights.json` value lacks `calibratedOn`.
 Done when: baseline recorded; tune weights on the tune set only. False rejects of photos you love are the metric that matters most.
 Prompt: "Do Phase 10 from PLAN.md."
 
@@ -145,7 +145,7 @@ Done when: a stranger can follow the README on either OS.
 Prompt: "Do Phase 18 from PLAN.md."
 
 ### [ ] Phase 19 (S): Windows tester + wider photo check (mostly you)
-Build: a real Windows tester installs the `.exe`, scans and culls a folder, reports problems with diagnostics. Add photos from friends with other cameras to the hold-out set and run `winnow eval`. Fix what breaks in small follow-up phases. Decide on signing.
+Build: a real Windows tester installs the `.exe`, scans and culls a folder, reports problems with diagnostics. Add photos from friends with other cameras to the hold-out set and run `faucet eval`. Fix what breaks in small follow-up phases. Decide on signing.
 Done when: the Windows tester completes a cull, and hold-out results are recorded.
 Prompt: only for fixes, one issue at a time.
 

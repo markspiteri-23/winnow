@@ -7,7 +7,7 @@ import sharp from "sharp";
 import { scanFolder } from "../src/core/scan.ts";
 
 const count = Number(process.argv[2] ?? 1000);
-const dir = mkdtempSync(path.join(tmpdir(), "winnow-bench-"));
+const dir = mkdtempSync(path.join(tmpdir(), "faucet-bench-"));
 const et = new ExifTool();
 try {
   const seed = path.join(dir, "seed.jpg");

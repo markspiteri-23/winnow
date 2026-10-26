@@ -25,7 +25,7 @@ function createWindow(): void {
   else void win.loadFile(path.join(here, "..", "renderer", "index.html"));
 }
 
-ipcMain.handle("winnow:smoke", () => smokeScan(process.env["WINNOW_SMOKE_DIR"], exiftool));
+ipcMain.handle("faucet:smoke", () => smokeScan(process.env["FAUCET_SMOKE_DIR"], exiftool));
 
 app.whenReady().then(createWindow);
 app.on("window-all-closed", () => app.quit());

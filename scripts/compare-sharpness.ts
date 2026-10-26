@@ -1,5 +1,5 @@
 // Phase 4 check: preview-sized vs full-resolution sharpness on real photos.
-// Usage: WINNOW_FIXTURES=/path npx tsx scripts/compare-sharpness.ts [count=10]
+// Usage: FAUCET_FIXTURES=/path npx tsx scripts/compare-sharpness.ts [count=10]
 // "Full resolution" = the full-size embedded JPEG (JpgFromRaw) or camera JPEG at native size; sharp cannot decode RAW.
 import path from "node:path";
 import { ExifTool } from "exiftool-vendored";
@@ -8,8 +8,8 @@ import { cacheDir } from "../src/core/paths.ts";
 import { previewShots } from "../src/core/preview.ts";
 import { scanFolder } from "../src/core/scan.ts";
 
-const root = process.env.WINNOW_FIXTURES;
-if (!root) throw new Error("set WINNOW_FIXTURES");
+const root = process.env.FAUCET_FIXTURES;
+if (!root) throw new Error("set FAUCET_FIXTURES");
 const count = Number(process.argv[2] ?? 10);
 
 function ranks(values: number[]): number[] {

@@ -2,9 +2,9 @@ import { contextBridge, ipcRenderer } from "electron";
 import type { SmokeResult } from "../core/smoke.ts";
 
 const api = {
-  smoke: (): Promise<SmokeResult> => ipcRenderer.invoke("winnow:smoke"),
+  smoke: (): Promise<SmokeResult> => ipcRenderer.invoke("faucet:smoke"),
 };
 
-export type WinnowApi = typeof api;
+export type FaucetApi = typeof api;
 
-contextBridge.exposeInMainWorld("winnow", api);
+contextBridge.exposeInMainWorld("faucet", api);

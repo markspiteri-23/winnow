@@ -6,7 +6,7 @@ import sharp from "sharp";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { pairFiles, scanFolder } from "./scan.ts";
 
-const root = mkdtempSync(path.join(tmpdir(), "winnow-scan-"));
+const root = mkdtempSync(path.join(tmpdir(), "faucet-scan-"));
 const sub = path.join(root, "day2");
 
 /** Writes a small JPEG with the given EXIF. Written as .jpg first so exiftool accepts it, then renamed. */

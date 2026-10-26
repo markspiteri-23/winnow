@@ -8,10 +8,10 @@ import type { SmokeResult } from "../src/core/smoke.ts";
 /** Finds the electron-builder `--dir` output for this OS. */
 function packagedExecutable(): string {
   const release = path.resolve("release");
-  if (process.platform === "win32") return path.join(release, "win-unpacked", "Winnow.exe");
+  if (process.platform === "win32") return path.join(release, "win-unpacked", "Faucet.exe");
   if (process.platform === "darwin") {
     const dir = readdirSync(release).find((d) => d.startsWith("mac"));
-    if (dir) return path.join(release, dir, "Winnow.app", "Contents", "MacOS", "Winnow");
+    if (dir) return path.join(release, dir, "Faucet.app", "Contents", "MacOS", "Faucet");
   }
   throw new Error(`No packaged app for ${process.platform} in ${release}`);
 }
@@ -20,7 +20,7 @@ test("packaged app loads sharp + exiftool and scans a generated folder", async (
   const exe = packagedExecutable();
   expect(existsSync(exe), `missing ${exe}; run npm run build && npm run package`).toBe(true);
 
-  const dir = mkdtempSync(path.join(tmpdir(), "winnow-e2e-"));
+  const dir = mkdtempSync(path.join(tmpdir(), "faucet-e2e-"));
   await sharp({ create: { width: 80, height: 60, channels: 3, background: { r: 20, g: 20, b: 20 } } })
     .jpeg()
     .toFile(path.join(dir, "dark.jpg"));
@@ -28,7 +28,7 @@ test("packaged app loads sharp + exiftool and scans a generated folder", async (
 
   const env: Record<string, string> = {};
   for (const [k, v] of Object.entries(process.env)) if (v !== undefined) env[k] = v;
-  env["WINNOW_SMOKE_DIR"] = dir;
+  env["FAUCET_SMOKE_DIR"] = dir;
 
   const app = await electron.launch({ executablePath: exe, env });
   try {

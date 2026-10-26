@@ -1,6 +1,6 @@
 # Third-party licences
 
-Runtime components bundled with Winnow and their licences. Phase 17 completes this for release (full licence texts).
+Runtime components bundled with Faucet and their licences. Phase 17 completes this for release (full licence texts).
 
 | Component | Licence |
 | --- | --- |

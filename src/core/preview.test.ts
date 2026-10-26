@@ -9,7 +9,7 @@ import { previewShots } from "./preview.ts";
 import { scanFolder } from "./scan.ts";
 import { weight } from "./weights.ts";
 
-const root = mkdtempSync(path.join(tmpdir(), "winnow-preview-"));
+const root = mkdtempSync(path.join(tmpdir(), "faucet-preview-"));
 const photos = path.join(root, "photos");
 const cache = path.join(root, "cache");
 
@@ -89,20 +89,20 @@ describe("previewShots", () => {
 
 describe("cacheDir", () => {
   it("follows each OS convention", () => {
-    expect(cacheDir("darwin", {}, "/Users/a")).toBe(path.join("/Users/a", "Library", "Caches", "winnow"));
+    expect(cacheDir("darwin", {}, "/Users/a")).toBe(path.join("/Users/a", "Library", "Caches", "faucet"));
     expect(cacheDir("win32", { LOCALAPPDATA: "C:\\Users\\a\\AppData\\Local" }, "C:\\Users\\a")).toBe(
-      "C:\\Users\\a\\AppData\\Local\\winnow\\cache",
+      "C:\\Users\\a\\AppData\\Local\\faucet\\cache",
     );
   });
 });
 
-// Real-photo check: only when $WINNOW_FIXTURES is set (never in CI).
-const fixtures = process.env.WINNOW_FIXTURES;
+// Real-photo check: only when $FAUCET_FIXTURES is set (never in CI).
+const fixtures = process.env.FAUCET_FIXTURES;
 describe.skipIf(!fixtures)("real ARW fixture", () => {
   it("yields a usable preview and reports its size", async () => {
     const scan = await scanFolder(fixtures ?? "", exiftool);
     const shot = scan.shots.find((s) => s.files.some((f) => f.kind === "raw" && /\.arw$/i.test(f.path)));
-    expect(shot, "no .ARW in $WINNOW_FIXTURES").toBeDefined();
+    expect(shot, "no .ARW in $FAUCET_FIXTURES").toBeDefined();
     const rawOnly = { ...shot!, files: shot!.files.filter((f) => f.kind === "raw") };
     const { previews, errors } = await previewShots([rawOnly], exiftool, path.join(root, "fixture-cache"));
     expect(errors).toEqual([]);

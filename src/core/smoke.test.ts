@@ -6,7 +6,7 @@ import sharp from "sharp";
 import { afterAll, describe, expect, it } from "vitest";
 import { smokeScan } from "./smoke.ts";
 
-const dir = mkdtempSync(path.join(tmpdir(), "winnow-smoke-"));
+const dir = mkdtempSync(path.join(tmpdir(), "faucet-smoke-"));
 
 afterAll(async () => {
   await exiftool.end();

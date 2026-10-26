@@ -1,33 +1,33 @@
 {
-  "_comment": "Thresholds/weights. Each entry is { \"value\": number, \"calibratedOn\": string }. Calibrate on $WINNOW_FIXTURES, never guess. Measured values go in NOTES.md.",
+  "_comment": "Thresholds/weights. Each entry is { \"value\": number, \"calibratedOn\": string }. Calibrate on $FAUCET_FIXTURES, never guess. Measured values go in NOTES.md.",
   "values": {
     "previewMinLongSide": {
       "value": 1000,
-      "calibratedOn": "PROVISIONAL (Phase 3): not yet measured on fixtures. Recalibrate in Phase 4 from preview-vs-full-res sharpness on $WINNOW_FIXTURES."
+      "calibratedOn": "PROVISIONAL (Phase 3): not yet measured on fixtures. Recalibrate in Phase 4 from preview-vs-full-res sharpness on $FAUCET_FIXTURES."
     },
     "analysisMaxSide": {
       "value": 1024,
-      "calibratedOn": "PROVISIONAL (Phase 4): analysis parameter, not yet measured on $WINNOW_FIXTURES. Long side of the downscaled image metrics run on."
+      "calibratedOn": "PROVISIONAL (Phase 4): analysis parameter, not yet measured on $FAUCET_FIXTURES. Long side of the downscaled image metrics run on."
     },
     "sharpnessTileSize": {
       "value": 64,
-      "calibratedOn": "PROVISIONAL (Phase 4): analysis parameter, not yet measured on $WINNOW_FIXTURES. Tile edge in px at analysisMaxSide."
+      "calibratedOn": "PROVISIONAL (Phase 4): analysis parameter, not yet measured on $FAUCET_FIXTURES. Tile edge in px at analysisMaxSide."
     },
     "sharpnessPercentile": {
       "value": 90,
-      "calibratedOn": "PROVISIONAL (Phase 4): analysis parameter, not yet measured on $WINNOW_FIXTURES. Shot sharpness = this percentile of tile Tenengrad, so a sharp subject on a soft background still counts."
+      "calibratedOn": "PROVISIONAL (Phase 4): analysis parameter, not yet measured on $FAUCET_FIXTURES. Shot sharpness = this percentile of tile Tenengrad, so a sharp subject on a soft background still counts."
     },
     "noiseFlatTileFraction": {
       "value": 0.25,
-      "calibratedOn": "PROVISIONAL (Phase 4): analysis parameter, not yet measured on $WINNOW_FIXTURES. Share of lowest-gradient tiles used for the noise estimate."
+      "calibratedOn": "PROVISIONAL (Phase 4): analysis parameter, not yet measured on $FAUCET_FIXTURES. Share of lowest-gradient tiles used for the noise estimate."
     },
     "shadowClipLevel": {
       "value": 3,
-      "calibratedOn": "PROVISIONAL (Phase 4): analysis parameter, not yet measured on $WINNOW_FIXTURES. Luma (0-255) at or below which a pixel counts as crushed."
+      "calibratedOn": "PROVISIONAL (Phase 4): analysis parameter, not yet measured on $FAUCET_FIXTURES. Luma (0-255) at or below which a pixel counts as crushed."
     },
     "highlightClipLevel": {
       "value": 252,
-      "calibratedOn": "PROVISIONAL (Phase 4): analysis parameter, not yet measured on $WINNOW_FIXTURES. Luma (0-255) at or above which a pixel counts as clipped."
+      "calibratedOn": "PROVISIONAL (Phase 4): analysis parameter, not yet measured on $FAUCET_FIXTURES. Luma (0-255) at or above which a pixel counts as clipped."
     }
   }
 }

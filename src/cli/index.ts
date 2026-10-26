@@ -7,12 +7,12 @@ import { cacheDir } from "../core/paths.ts";
 import { previewShots, type PreviewResult } from "../core/preview.ts";
 import { scanFolder, type ScanResult } from "../core/scan.ts";
 
-const HELP = `winnow - local photo culler (no cloud)
+const HELP = `faucet - local photo culler (no cloud)
 
 Usage:
-  winnow scan <folder> [--json]       List shots (RAW+JPEG pairs collapsed) with EXIF
-  winnow previews <folder> [--json]   Extract/cache the best preview per shot and report its size
-  winnow metrics <folder> [--json]    Sharpness, noise and exposure per shot (from its preview)
+  faucet scan <folder> [--json]       List shots (RAW+JPEG pairs collapsed) with EXIF
+  faucet previews <folder> [--json]   Extract/cache the best preview per shot and report its size
+  faucet metrics <folder> [--json]    Sharpness, noise and exposure per shot (from its preview)
 
 Options:
   --json     Machine-readable output
@@ -90,12 +90,12 @@ export async function main(argv: string[]): Promise<number> {
     return 0;
   }
   if (!["scan", "previews", "metrics"].includes(command) || !folder) {
-    process.stderr.write(`winnow: unknown command or missing folder\n\n${HELP}`);
+    process.stderr.write(`faucet: unknown command or missing folder\n\n${HELP}`);
     return 2;
   }
   const root = path.resolve(folder);
   if (!statSync(root, { throwIfNoEntry: false })?.isDirectory()) {
-    process.stderr.write(`winnow: not a folder: ${root}\n`);
+    process.stderr.write(`faucet: not a folder: ${root}\n`);
     return 2;
   }
   const et = new ExifTool();

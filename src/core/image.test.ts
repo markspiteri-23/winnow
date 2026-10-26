@@ -7,7 +7,7 @@ import { afterAll, describe, expect, it } from "vitest";
 import { loadOriented } from "./image.ts";
 
 const here = path.dirname(fileURLToPath(import.meta.url));
-const tmp = mkdtempSync(path.join(tmpdir(), "winnow-image-"));
+const tmp = mkdtempSync(path.join(tmpdir(), "faucet-image-"));
 afterAll(() => rmSync(tmp, { recursive: true, force: true }));
 
 // Upright 40x20 test card: one colour per quadrant.

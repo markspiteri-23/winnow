@@ -1,4 +1,4 @@
-# Winnow (working name)
+# Faucet (working name)
 
 Cross-platform (macOS + Windows) desktop photo culler. Scans a folder of RAW/JPEG shots, groups near-duplicates, flags blur / bad exposure / closed eyes, suggests the best frame per group, and writes the result as XMP sidecars so Lightroom, Bridge, darktable etc. pick it up. Local only, no cloud, no LLM calls.
 
@@ -24,7 +24,7 @@ Cross-platform (macOS + Windows) desktop photo culler. Scans a folder of RAW/JPE
 - Treat filesystems as case-insensitive (pair `IMG_1.ARW` with `img_1.jpg`).
 - npm scripts must be Node-based, no bash-only syntax, no `rm -rf`, no `cp`.
 - Every test must pass on macOS and Windows CI. Unit tests use generated images (sharp), never real photos.
-- Real-photo tests run only when `WINNOW_FIXTURES` is set and are skipped in CI.
+- Real-photo tests run only when `FAUCET_FIXTURES` is set and are skipped in CI.
 - No new native dependencies without asking. A build break on one OS costs a whole session.
 - Native binaries (sharp, exiftool) are unpacked from the asar. Test the PACKAGED app, not only dev mode.
 - Do not upgrade dependencies outside a task that says so.
@@ -46,7 +46,7 @@ Cross-platform (macOS + Windows) desktop photo culler. Scans a folder of RAW/JPE
 ## Hard rules
 - NEVER modify, move or delete original photos. Output = sidecars or new files only. Writing is dry-run unless `--apply` is passed. Only exception: the opt-in JPEG-embed mode in PLAN.md Phase 12, which needs a backup copy and explicit confirmation.
 - Sidecars: change only `xmp:Rating` and `xmp:Label`, preserve every other property (a test must prove it), write `.xmp.bak` first, write atomically (temp file then rename), retry if the file is locked, refuse to touch a sidecar that cannot be parsed.
-- Test photos live OUTSIDE the repo at `$WINNOW_FIXTURES`. Never commit photos. Keep a hold-out set that is never tuned against.
+- Test photos live OUTSIDE the repo at `$FAUCET_FIXTURES`. Never commit photos. Keep a hold-out set that is never tuned against.
 - Every verdict carries human-readable `reasons`. No black-box scores.
 - Thresholds/weights live in `weights.json`, each with a `calibratedOn` note, and a measured-values table in NOTES.md. Calibrate on fixtures, never guess.
 
@@ -54,6 +54,6 @@ Cross-platform (macOS + Windows) desktop photo culler. Scans a folder of RAW/JPE
 `Shot` (files[], captureDate with sub-seconds, cameraModel, iso, orientation, width, height, previewPath?, lowConfidence) -> `Metrics` (sharpness, noise, exposure, hash, faces[]) -> `Group` (shotIDs, bestID) -> `Verdict` (pick | reject | none, reasons[], score)
 
 ## Conventions
-- Results cache: small helper in `src/core/paths.ts` (macOS `~/Library/Caches/winnow`, Windows `%LOCALAPPDATA%\winnow\cache`), keyed by path + mtime + size. No extra dependency.
+- Results cache: small helper in `src/core/paths.ts` (macOS `~/Library/Caches/faucet`, Windows `%LOCALAPPDATA%\faucet\cache`), keyed by path + mtime + size. No extra dependency.
 - CLI output: human table by default, `--json` for machine output.
 - Licence: MIT. Third-party licences listed in `THIRD_PARTY_LICENSES.md`.

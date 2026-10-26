@@ -5,7 +5,7 @@ import sharp from "sharp";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { measureShot, measureShots, type Metrics } from "./metrics.ts";
 
-const tmp = mkdtempSync(path.join(tmpdir(), "winnow-metrics-"));
+const tmp = mkdtempSync(path.join(tmpdir(), "faucet-metrics-"));
 afterAll(() => rmSync(tmp, { recursive: true, force: true }));
 
 const W = 1200;

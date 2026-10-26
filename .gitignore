@@ -7,7 +7,7 @@ coverage/
 .DS_Store
 Thumbs.db
 .env
-# Never commit photos (fixtures live in $WINNOW_FIXTURES)
+# Never commit photos (fixtures live in $FAUCET_FIXTURES)
 *.arw
 *.ARW
 *.cr2

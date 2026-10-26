@@ -1,5 +1,5 @@
-appId: org.winnow.app
-productName: Winnow
+appId: org.faucet.app
+productName: Faucet
 directories:
   output: release
 files:
