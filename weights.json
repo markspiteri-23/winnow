@@ -28,6 +28,18 @@
     "highlightClipLevel": {
       "value": 252,
       "calibratedOn": "PROVISIONAL (Phase 4): analysis parameter, not yet measured on $FAUCET_FIXTURES. Luma (0-255) at or above which a pixel counts as clipped."
+    },
+    "groupMaxGapSeconds": {
+      "value": 45,
+      "calibratedOn": "Measured 2026-10-26 on 36 consecutive pairs of 38 real shots (26 a6000 ARW, 12 JPEG), labelled by eye: see NOTES.md Phase 6 table. Longest same-scene gap 32 s (star field); 45 s leaves margin. Different scenes are separated by similarity, not time."
+    },
+    "groupMaxNumberGap": {
+      "value": 1,
+      "calibratedOn": "Not measurable on fixtures (all shots dated). Fallback only: consecutive file numbers."
+    },
+    "groupMinSimilarity": {
+      "value": 0.3,
+      "calibratedOn": "Measured 2026-10-26 on 36 consecutive pairs of 38 real shots (26 a6000 ARW, 12 JPEG), labelled by eye: see NOTES.md Phase 6 table. Same burst >= 0.40 (cafe pose change), different scene within 45 s <= 0.15; 0.3 leans toward splitting."
     }
   }
 }

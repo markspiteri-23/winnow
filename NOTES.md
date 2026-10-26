@@ -47,6 +47,13 @@
 - a6000 ARWs (26, exiftool 13 via exiftool-vendored): AFPointSelected `n/a`, AFPointsUsed and FocalPlaneAFPointsUsed `(none)`, no FocusLocation, FlexibleSpotPosition `0 0` in every file (modes seen: Multi, Wide, Tracking, Face Tracking, Manual).
 - Only FocusMode/AFAreaMode and FocusPosition2 (a distance step, not a frame position) exist, so no AF region can be located. Revisit only for other cameras (e.g. newer Sony FocusLocation, Canon/Nikon AF point tags).
 
+### Phase 6: Burst / duplicate grouping
+- `src/core/group.ts`: sort by wall-clock capture time (recorded UTC offset ignored: the a6000 writes it on some files only), else by filename number; each shot joins its predecessor if <= 45 s apart, same orientation, and layout similarity >= 0.3. `faucet groups <folder> [--json] [--offsets cams.json]` prints the reason for every join/split.
+- DEVIATION: dHash (in Metrics as `hash`) did not separate the real data (same burst 4-30 bits, different scene seconds apart 23-35), so grouping uses Pearson correlation of a 16x16 z-normalised luma thumb (`thumb` in Metrics). dHash kept for later exact-duplicate use.
+- Labelled pairs within 45 s: same burst similarity 0.40-0.98 (n=12, low = cafe pose change 0.40, teal window 0.69); different scene 0.02-0.15 (n=4). Result: all 8 real bursts grouped, all singles alone (38 shots -> 24 groups).
+- Known merge: ARW Test-4/Test-5 (portrait vs sky, same lamp post, 2 s, 0.49) join; no single threshold splits it without splitting the cafe burst. Phase 9 must not auto-reject on weak in-group evidence.
+- Gotcha: sharp-free tests build luma arrays directly; `groupMaxNumberGap` (1) is untested on real files (all dated).
+
 ## Measured values
 
 | Weight | Value | Measured on | Notes |
@@ -58,3 +65,6 @@
 | noiseFlatTileFraction | 0.25 | not measured (provisional) | |
 | shadowClipLevel | 3 | not measured (provisional) | luma 0-255 |
 | highlightClipLevel | 252 | not measured (provisional) | luma 0-255 |
+| groupMaxGapSeconds | 45 | 38 real shots, 36 pairs | longest same-scene gap 32 s |
+| groupMinSimilarity | 0.3 | 38 real shots, 36 pairs | same >= 0.40, different <= 0.15 |
+| groupMaxNumberGap | 1 | not measurable (all dated) | fallback only |

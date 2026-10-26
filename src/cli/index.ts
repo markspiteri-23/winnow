@@ -1,7 +1,8 @@
-import { statSync } from "node:fs";
+import { readFileSync, statSync } from "node:fs";
 import path from "node:path";
 import { parseArgs } from "node:util";
 import { ExifTool } from "exiftool-vendored";
+import { groupShots, type GroupResult } from "../core/group.ts";
 import { measureShots, type MetricsResult } from "../core/metrics.ts";
 import { cacheDir } from "../core/paths.ts";
 import { previewShots, type PreviewResult } from "../core/preview.ts";
@@ -13,10 +14,12 @@ Usage:
   faucet scan <folder> [--json]       List shots (RAW+JPEG pairs collapsed) with EXIF
   faucet previews <folder> [--json]   Extract/cache the best preview per shot and report its size
   faucet metrics <folder> [--json]    Sharpness, noise and exposure per shot (from its preview)
+  faucet groups <folder> [--json]     Group bursts / near-duplicates, with the reason for every split or join
 
 Options:
   --json     Machine-readable output
   --apply    Write sidecars (default is dry-run)
+  --offsets <file.json>  Per-camera clock offsets in seconds, e.g. {"ILCE-6000": -3600}
   -h, --help Show this help
 `;
 
@@ -74,6 +77,21 @@ function metricsTable(root: string, result: MetricsResult, seconds: number): str
   return out.join("\n") + "\n";
 }
 
+function groupsTable(root: string, result: GroupResult, errors: string[], seconds: number): string {
+  const groupOf = new Map(result.groups.flatMap((g) => g.shotIDs.map((id) => [id, g.id] as const)));
+  const linkTo = new Map(result.links.map((l) => [l.to, l]));
+  const order = result.groups.flatMap((g) => g.shotIDs);
+  const rows = order.map((id) => {
+    const l = linkTo.get(id);
+    return [groupOf.get(id) ?? "-", path.relative(root, id), l ? (l.joined ? "joined" : "new group") : "first", l?.reason ?? ""];
+  });
+  const out = render(["group", "shot", "decision", "reason"], rows);
+  out.push(...errors);
+  const multi = result.groups.filter((g) => g.shotIDs.length > 1).length;
+  out.push(`${order.length} shots in ${result.groups.length} groups (${multi} with 2+ shots), ${errors.length} errors, ${seconds.toFixed(2)}s`);
+  return out.join("\n") + "\n";
+}
+
 export async function main(argv: string[]): Promise<number> {
   const { values, positionals } = parseArgs({
     args: argv,
@@ -82,6 +100,7 @@ export async function main(argv: string[]): Promise<number> {
       help: { type: "boolean", short: "h" },
       json: { type: "boolean" },
       apply: { type: "boolean" },
+      offsets: { type: "string" },
     },
   });
   const [command, folder] = positionals;
@@ -89,7 +108,7 @@ export async function main(argv: string[]): Promise<number> {
     process.stdout.write(HELP);
     return 0;
   }
-  if (!["scan", "previews", "metrics"].includes(command) || !folder) {
+  if (!["scan", "previews", "metrics", "groups"].includes(command) || !folder) {
     process.stderr.write(`faucet: unknown command or missing folder\n\n${HELP}`);
     return 2;
   }
@@ -102,7 +121,7 @@ export async function main(argv: string[]): Promise<number> {
   try {
     const start = performance.now();
     const result = await scanFolder(root, et);
-    if (command === "metrics") {
+    if (command === "metrics" || command === "groups") {
       const previews = await previewShots(result.shots, et, cacheDir());
       const orientation = new Map(result.shots.map((s) => [s.id, s.orientation]));
       const measured = await measureShots(
@@ -110,6 +129,15 @@ export async function main(argv: string[]): Promise<number> {
       );
       const seconds = (performance.now() - start) / 1000;
       const errors = [...result.errors, ...previews.errors, ...measured.errors];
+      if (command === "groups") {
+        const cameraOffsets = values.offsets ? (JSON.parse(readFileSync(values.offsets, "utf8")) as Record<string, number>) : {};
+        const byShot = new Map(measured.metrics.map((m) => [m.shotId, m]));
+        const grouped = groupShots(result.shots, byShot, { cameraOffsets });
+        const done = (performance.now() - start) / 1000;
+        const errLines = errors.map((e) => `error: ${path.relative(root, e.path)}: ${e.error}`);
+        process.stdout.write(values.json ? JSON.stringify({ root, ...grouped, errors }, null, 2) + "\n" : groupsTable(root, grouped, errLines, done));
+        return 0;
+      }
       const text = metricsTable(root, { metrics: measured.metrics, errors }, seconds);
       process.stdout.write(values.json ? JSON.stringify({ root, metrics: measured.metrics, errors }, null, 2) + "\n" : text);
       return 0;

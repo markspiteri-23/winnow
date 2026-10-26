@@ -77,7 +77,7 @@ Build: spike first. Check whether your a6000 ARW files expose the focus point th
 Done when: either the AF region metric works on fixtures, or the dead end is recorded.
 Prompt: "Do Phase 5 from PLAN.md. Spike first, stop if no focus-point tags exist."
 
-### [ ] Phase 6 (M): Burst / duplicate grouping
+### [x] Phase 6 (M): Burst / duplicate grouping
 Build: dHash per Shot; sort by sub-second capture time; time-gap + Hamming distance join a group; single-link clustering; prefer splitting over merging. Fallback to sequential filename numbers when dates are missing or implausible. Per-camera time offset in config (keyed by camera model) for multi-camera shoots. `faucet groups <folder> [--json]`.
 Done when: fixture bursts group correctly, singles stay alone, RAW+JPEG pairs never group with themselves. Print distances for same-burst vs different-scene pairs, pick the threshold from data, record it.
 Prompt: "Do Phase 6 from PLAN.md."

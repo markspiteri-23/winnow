@@ -3,7 +3,7 @@ import { tmpdir } from "node:os";
 import path from "node:path";
 import sharp from "sharp";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
-import { measureShot, measureShots, type Metrics } from "./metrics.ts";
+import { hamming, measureShot, measureShots, type Metrics } from "./metrics.ts";
 
 const tmp = mkdtempSync(path.join(tmpdir(), "faucet-metrics-"));
 afterAll(() => rmSync(tmp, { recursive: true, force: true }));
@@ -88,6 +88,19 @@ describe("sharpness", () => {
 
   it("analyses a downscaled image", () => {
     expect(Math.max(sharpM.width, sharpM.height)).toBe(1024);
+  });
+});
+
+describe("hash", () => {
+  it("keeps near-duplicates close and different scenes far apart", async () => {
+    const base = scene();
+    const a = await measure(await save("h-a.png", base));
+    const noisy = await measure(await save("h-noisy.png", addNoise(base, 6)));
+    const flipped = await measure(await save("h-flip.png", await sharp(base, { raw }).flop().raw().toBuffer()));
+    expect(a.hash).toMatch(/^[0-9a-f]{16}$/);
+    expect(hamming(a.hash, a.hash)).toBe(0);
+    expect(hamming(a.hash, noisy.hash)).toBeLessThanOrEqual(4);
+    expect(hamming(a.hash, flipped.hash)).toBeGreaterThan(16);
   });
 });
 

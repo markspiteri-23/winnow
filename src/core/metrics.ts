@@ -20,6 +20,10 @@ export interface Metrics {
   /** Estimated noise sigma in luma levels (Immerkaer, flattest tiles). */
   noise: number;
   exposure: Exposure;
+  /** 64-bit difference hash (dHash) of the upright luma, 16 hex chars; near-duplicates differ in few bits. */
+  hash: string;
+  /** 16x16 block-mean luma, z-normalised (row-major, 2 decimals): a coarse layout fingerprint for grouping. */
+  thumb: number[];
   /** Analysed size after downscale. */
   width: number;
   height: number;
@@ -77,6 +81,62 @@ function percentile(values: number[], p: number): number {
   const sorted = [...values].sort((a, b) => a - b);
   const i = Math.min(sorted.length - 1, Math.max(0, Math.round((p / 100) * (sorted.length - 1))));
   return sorted[i]!;
+}
+
+/** dHash: box-average luma into 9x8 cells, bit = left cell brighter than its right neighbour. */
+export function dHash(luma: Float32Array, w: number, h: number): string {
+  const cells = blockMeans(luma, w, h, 9, 8);
+  let hex = "";
+  for (let row = 0; row < 8; row++) {
+    let byte = 0;
+    for (let col = 0; col < 8; col++) byte = (byte << 1) | (cells[row * 9 + col]! > cells[row * 9 + col + 1]! ? 1 : 0);
+    hex += byte.toString(16).padStart(2, "0");
+  }
+  return hex;
+}
+
+/** Mean luma of a `cols` x `rows` grid of blocks. */
+function blockMeans(luma: Float32Array, w: number, h: number, cols: number, rows: number): Float64Array {
+  const sum = new Float64Array(cols * rows);
+  const count = new Float64Array(cols * rows);
+  for (let y = 0; y < h; y++) {
+    const r = Math.min(rows - 1, Math.floor((y * rows) / h));
+    for (let x = 0; x < w; x++) {
+      const c = r * cols + Math.min(cols - 1, Math.floor((x * cols) / w));
+      sum[c] = sum[c]! + luma[y * w + x]!;
+      count[c] = count[c]! + 1;
+    }
+  }
+  return sum.map((v, i) => v / Math.max(1, count[i]!));
+}
+
+/** 16x16 block means, z-normalised so exposure shifts do not matter. All zeros for a flat frame. */
+export function layoutThumb(luma: Float32Array, w: number, h: number): number[] {
+  const m = blockMeans(luma, w, h, 16, 16);
+  const mean = m.reduce((a, b) => a + b, 0) / m.length;
+  const sd = Math.sqrt(m.reduce((a, b) => a + (b - mean) ** 2, 0) / m.length);
+  return Array.from(m, (v) => (sd < 1e-6 ? 0 : Math.round(((v - mean) / sd) * 100) / 100));
+}
+
+/** Pearson correlation of two layout thumbs, -1..1 (0 when either is flat). */
+export function similarity(a: number[], b: number[]): number {
+  if (a.length !== b.length || a.length === 0) return 0;
+  let dot = 0;
+  for (let i = 0; i < a.length; i++) dot += a[i]! * b[i]!;
+  return Math.round((dot / a.length) * 100) / 100;
+}
+
+/** Number of differing bits between two dHash hex strings. */
+export function hamming(a: string, b: string): number {
+  let d = 0;
+  for (let i = 0; i < Math.min(a.length, b.length); i += 2) {
+    let x = parseInt(a.slice(i, i + 2), 16) ^ parseInt(b.slice(i, i + 2), 16);
+    while (x) {
+      d += x & 1;
+      x >>= 1;
+    }
+  }
+  return d;
 }
 
 /** Pure analysis of a loaded image; exported for tests. */
@@ -141,6 +201,8 @@ export function analysePixels(px: Pixels): Omit<Metrics, "shotId" | "lowConfiden
     sharpness: round(Math.sqrt(corrected)),
     sharpnessRaw: round(Math.sqrt(raw)),
     noise: round(noise),
+    hash: dHash(luma, w, h),
+    thumb: layoutThumb(luma, w, h),
     exposure: {
       shadowsPct: round((100 * shadows) / total),
       highlightsPct: round((100 * highlights) / total),
