@@ -15,5 +15,5 @@
     "lib": ["ES2024", "DOM", "DOM.Iterable"],
     "types": ["node"]
   },
-  "include": ["src", "e2e", "electron.vite.config.ts"]
+  "include": ["src", "e2e", "scripts", "electron.vite.config.ts"]
 }

@@ -57,7 +57,7 @@ Build: minimal Electron app (contextIsolation, sandbox, preload) that loads shar
 Done when: packaged build passes on both OSes. Any native-module problem is fixed HERE, before features. Mac architecture choice is deferred to Phase 17.
 Prompt: "Do Phase 1 from PLAN.md. Packaging smoke test only, no features."
 
-### [ ] Phase 2 (S): Scan, pairing, EXIF
+### [x] Phase 2 (S): Scan, pairing, EXIF
 Build: recursive scan of supported files (ARW, CR2, CR3, NEF, DNG, JPG). Collapse RAW+JPEG pairs (case-insensitive basename) into one `Shot`. Via exiftool: sub-second capture time, camera model, ISO, EXIF orientation, dimensions. Missing or implausible date handled as null. Originals opened read-only; one bad file is recorded, never aborts. `winnow scan <folder>`.
 Done when: tests on generated JPEGs cover pairing, case-insensitivity, missing dates, corrupt file; report scan time for 1000 files.
 Prompt: "Do Phase 2 from PLAN.md."
