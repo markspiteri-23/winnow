@@ -5,3 +5,7 @@ updates:
     schedule:
       interval: monthly
     open-pull-requests-limit: 5
+    ignore:
+      # Types must match the Node major in .nvmrc; bump it with the Node upgrade.
+      - dependency-name: "@types/node"
+        update-types: ["version-update:semver-major"]
