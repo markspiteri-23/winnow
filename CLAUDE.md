@@ -3,7 +3,7 @@
 Cross-platform (macOS + Windows) desktop photo culler. Scans a folder of RAW/JPEG shots, groups near-duplicates, flags blur / bad exposure / closed eyes, suggests the best frame per group, and writes the result as XMP sidecars so Lightroom, Bridge, darktable etc. pick it up. Local only, no cloud, no LLM calls.
 
 ## Stack
-- TypeScript (strict), Node 22, ONE package, npm. Exact versions pinned (`save-exact=true`), lockfile committed.
+- TypeScript (strict), Node 24 LTS (same major locally and in CI: `.nvmrc` + `engines`), ONE package, npm. Exact versions pinned (`save-exact=true`), lockfile committed.
 - Layout: `src/core` (pure logic, never imports Electron), `src/cli`, `src/main` (Electron main), `src/renderer` (React)
 - Allowed deps: `exiftool-vendored`, `sharp`, `vitest`, `@playwright/test` (dev, Electron launch tests), `electron`, `electron-vite`, `electron-builder`, `react`. Face/eye model choice is made in the Phase 7 spike. Anything else: ask first.
 - Builds: electron-builder -> macOS `.dmg`, Windows NSIS `.exe`, produced by GitHub Actions on macOS + Windows runners.
