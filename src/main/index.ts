@@ -2,7 +2,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { app, BrowserWindow, ipcMain } from "electron";
 import { exiftool } from "exiftool-vendored";
-import { smokeScan } from "../core/smoke.ts";
+import { faceSpikeImages, smokeScan } from "../core/smoke.ts";
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 
@@ -26,6 +26,8 @@ function createWindow(): void {
 }
 
 ipcMain.handle("faucet:smoke", () => smokeScan(process.env["FAUCET_SMOKE_DIR"], exiftool));
+// Phase 7 spike: downscale before detection (long side 1024 px).
+ipcMain.handle("faucet:faceSpike", () => faceSpikeImages(process.env["FAUCET_FACE_DIR"], exiftool, 1024));
 
 app.whenReady().then(createWindow);
 app.on("window-all-closed", () => app.quit());

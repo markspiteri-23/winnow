@@ -54,6 +54,13 @@
 - Known merge: ARW Test-4/Test-5 (portrait vs sky, same lamp post, 2 s, 0.49) join; no single threshold splits it without splitting the cafe burst. Phase 9 must not auto-reject on weak in-group evidence.
 - Gotcha: sharp-free tests build luma arrays directly; `groupMaxNumberGap` (1) is untested on real files (all dated).
 
+### Phase 7: Face/eyes spike (MediaPipe chosen; onnxruntime not tried, it would add a native dep)
+- MediaPipe face landmarker (`@mediapipe/tasks-vision` 1.1.1, devDep: vite bundles it) cannot run in Node (needs canvas/WebGL); it runs in a module Web Worker in the sandboxed renderer (`src/renderer/face-worker.ts`, CSP `'wasm-unsafe-eval'`). Main loads previews via `loadOriented` at 1024 px and sends pixels over IPC. Eyes = blendshapes `eyeBlinkLeft/Right` (subject's own sides).
+- Model bundled in the app (3.7 MB, `resources/models/face_landmarker.task`, sha256 64184e22...c9ff, from mediapipe-models/.../float16/1/); not downloaded on first run (offline app). WASM adds 13.5 MB; asar 24 MB. Licences: code + all 3 models Apache-2.0.
+- Short-range detector misses faces < ~100 px at 1024 (Test-5/8.jpg, Test-23/24/25.ARW). Fix in spike: 2nd pass on overlapping tiles (1/3 long side, 50% step), drop tile faces with IoU >= 0.3 to a full-frame face. Finds all of them; 1 false positive (goose, Test-15.ARW, 51 px). Phase 8 needs min size + confidence filtering.
+- Packaged mac (M-series): init 80-430 ms, 6-18 ms/photo full frame only, 60-160 ms with tiles. 5 fixtures in `$FAUCET_FIXTURES/faces`: Test-26.ARW eyes closed 0.88/0.95 (looking down); its burst sibling Test-25 open 0.06/0.04; open eyes elsewhere 0.03-0.46, i.e. half-turned faces read up to ~0.5-0.7 on one eye.
+- `e2e/face.spec.ts`: CI runs the packaged worker on a generated image (no faces); real-fixture test runs only when FAUCET_FIXTURES is set.
+
 ## Measured values
 
 | Weight | Value | Measured on | Notes |

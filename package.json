@@ -19,6 +19,7 @@
     "cli": "tsx src/cli/index.ts"
   },
   "devDependencies": {
+    "@mediapipe/tasks-vision": "1.1.1",
     "@playwright/test": "1.64.1",
     "@types/node": "24.19.2",
     "electron": "44.9.3",

@@ -82,7 +82,7 @@ Build: dHash per Shot; sort by sub-second capture time; time-gap + Hamming dista
 Done when: fixture bursts group correctly, singles stay alone, RAW+JPEG pairs never group with themselves. Print distances for same-burst vs different-scene pairs, pick the threshold from data, record it.
 Prompt: "Do Phase 6 from PLAN.md."
 
-### [ ] Phase 7 (S): Face/eyes spike + licence check
+### [x] Phase 7 (S): Face/eyes spike + licence check
 Build: nothing shipped. Evaluate at most two options that run headless on both OSes with a bundled model: MediaPipe face landmarker (WASM, no native module) and onnxruntime-node (prebuilt binaries). Downscale before detection, run in a worker. Prove one on 5 fixtures (a blink, a group shot) inside the PACKAGED app test on both CI OSes. Record code licence, model and training-data licence, model size, speed per photo in NOTES.md and THIRD_PARTY_LICENSES.md. Note bundle-vs-download-on-first-run.
 Done when: one option is chosen with evidence, licence compatible with MIT. If neither works on Windows, STOP and tell me: v1 ships without eye detection.
 Prompt: "Do Phase 7 from PLAN.md. Spike only, no integration."

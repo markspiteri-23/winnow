@@ -1,7 +1,11 @@
 import { readdirSync } from "node:fs";
 import path from "node:path";
 import type { ExifTool } from "exiftool-vendored";
-import { imageLibVersions, probeImage, type ImageProbe } from "./image.ts";
+import { imageLibVersions, loadOriented, probeImage, type ImageProbe } from "./image.ts";
+import { cacheDir } from "./paths.ts";
+import { previewShots } from "./preview.ts";
+import { scanFolder } from "./scan.ts";
+import type { FileError } from "./types.ts";
 
 export interface SmokeFile {
   file: string;
@@ -35,4 +39,37 @@ export async function smokeScan(folder: string | undefined, et: ExifTool): Promi
     }
   }
   return { versions, files };
+}
+
+export interface SpikeImage {
+  file: string;
+  width: number;
+  height: number;
+  channels: number;
+  /** Interleaved 8-bit samples, upright. */
+  data: Uint8Array;
+}
+
+/** Phase 7 face spike only: upright downscaled previews of every shot in `folder`. */
+export async function faceSpikeImages(
+  folder: string | undefined,
+  et: ExifTool,
+  maxSide: number,
+): Promise<{ images: SpikeImage[]; errors: FileError[] }> {
+  if (!folder) return { images: [], errors: [] };
+  const scan = await scanFolder(folder, et);
+  const previews = await previewShots(scan.shots, et, cacheDir());
+  const orientation = new Map(scan.shots.map((s) => [s.id, s.orientation]));
+  const images: SpikeImage[] = [];
+  const errors = [...scan.errors, ...previews.errors];
+  for (const p of previews.previews) {
+    try {
+      const px = await loadOriented(p.path, orientation.get(p.shotId) ?? null, { maxSide });
+      const file = path.relative(folder, p.shotId);
+      images.push({ file, width: px.width, height: px.height, channels: px.channels, data: new Uint8Array(px.data) });
+    } catch (err) {
+      errors.push({ path: p.shotId, error: err instanceof Error ? err.message : String(err) });
+    }
+  }
+  return { images, errors };
 }
