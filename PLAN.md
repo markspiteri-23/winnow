@@ -87,7 +87,7 @@ Build: nothing shipped. Evaluate at most two options that run headless on both O
 Done when: one option is chosen with evidence, licence compatible with MIT. If neither works on Windows, STOP and tell me: v1 ships without eye detection.
 Prompt: "Do Phase 7 from PLAN.md. Spike only, no integration."
 
-### [ ] Phase 8 (M): Face integration
+### [x] Phase 8 (M): Face integration
 Build: per Shot faceCount, per-face eyes-open score, `allEyesOpen`, `anyEyesClosed`, face-region sharpness. Ignore faces below a minimum size and low-confidence detections; sunglasses, profiles and glare yield "unknown", never "closed". Match each face to the same person's other frames in the burst and judge relative to them. Flags only, no rejects yet.
 Done when: the 3 blink fixtures flag correctly, group shot reports per-face results, no-face photos unaffected, thresholds calibrated and recorded.
 Prompt: "Do Phase 8 from PLAN.md."

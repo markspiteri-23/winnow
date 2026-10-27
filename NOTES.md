@@ -61,6 +61,12 @@
 - Packaged mac (M-series): init 80-430 ms, 6-18 ms/photo full frame only, 60-160 ms with tiles. 5 fixtures in `$FAUCET_FIXTURES/faces`: Test-26.ARW eyes closed 0.88/0.95 (looking down); its burst sibling Test-25 open 0.06/0.04; open eyes elsewhere 0.03-0.46, i.e. half-turned faces read up to ~0.5-0.7 on one eye.
 - `e2e/face.spec.ts`: CI runs the packaged worker on a generated image (no faces); real-fixture test runs only when FAUCET_FIXTURES is set.
 
+### Phase 8: Face integration (flags only)
+- `src/core/faces.ts`: `measureFaces` (filter, eye state open/closed/unknown, frontal = eye-width ratio, eye contrast/glare, face-region Tenengrad) and `compareFaces` (person ids across a group; `allEyesOpen`, `anyEyesClosed`, `blinkVsSibling`). Wired via `faucet:faceReport` IPC (renderer detects, main judges); `Metrics.faces` merge left to Phase 9.
+- Only ONE real blink fixture exists (Test-26.ARW, flags correctly against Test-25); PLAN wants 3. Add 2 more and recheck `eyeClosedMinBlink`. Sunglasses/glare calibrated on synthetic variants only (`scripts/make-face-fixtures.ts` -> `$FAUCET_FIXTURES/generated-faces`).
+- Size cannot separate false positives (goose 51 px, paint plate 56 px vs real 53 px); tile-pass aspect >= 0.97 does. Single-face frames are taken as the same person (burst re-framing moved Test-25/26 by 1.7 face sizes).
+- Gotcha: glare is checked before contrast because a fully clipped eye is also flat. Phase touched 11 files (4 docs/config); not split, the IPC wiring only makes sense together.
+
 ## Measured values
 
 | Weight | Value | Measured on | Notes |
@@ -75,3 +81,12 @@
 | groupMaxGapSeconds | 45 | 38 real shots, 36 pairs | longest same-scene gap 32 s |
 | groupMinSimilarity | 0.3 | 38 real shots, 36 pairs | same >= 0.40, different <= 0.15 |
 | groupMaxNumberGap | 1 | not measurable (all dated) | fallback only |
+| faceMinSizePx | 40 | 20 real faces | smallest real 53 px |
+| faceTileMinAspect | 0.97 | 9 tile faces, 2 false positives | real >= 1.00, FP <= 0.94 |
+| eyeOpenMaxBlink | 0.35 | 17 open eyes | open <= 0.18, half-turned squint 0.52 |
+| eyeClosedMinBlink | 0.6 | 1 real blink | 0.88/0.95; occluded open eyes up to 0.58 |
+| faceMinFrontal | 0.7 | 20 real faces | frontal >= 0.77, turned <= 0.60 |
+| eyeMinContrast | 8 | 17 real + 6 synthetic sunglasses | real >= 17.7, synthetic <= 3.7 |
+| eyeMaxGlarePct | 25 | 17 real + 6 synthetic glare | real <= 0.1%, synthetic >= 55% |
+| faceMatchMaxDistance | 1.0 | one 2-person pair | same 0.18-0.20, other ~2.1 |
+| faceMatchMaxSizeRatio | 1.5 | one 2-person pair | same 1.04-1.13 |

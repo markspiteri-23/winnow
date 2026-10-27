@@ -40,6 +40,42 @@
     "groupMinSimilarity": {
       "value": 0.3,
       "calibratedOn": "Measured 2026-10-26 on 36 consecutive pairs of 38 real shots (26 a6000 ARW, 12 JPEG), labelled by eye: see NOTES.md Phase 6 table. Same burst >= 0.40 (cafe pose change), different scene within 45 s <= 0.15; 0.3 leans toward splitting."
+    },
+    "faceMinSizePx": {
+      "value": 40,
+      "calibratedOn": "Measured 2026-10-26 with the packaged face harness on 26 a6000 ARW + 12 JPEG real shots (20 faces labelled by eye) plus 12 synthetic sunglasses/glare variants (scripts/make-face-fixtures.ts): see NOTES.md Phase 8. Long side of the face box at analysis size (1024). Smallest real face 53 px (Test-7.ARW); kept below it. Size does NOT separate the two false positives (51, 56 px); faceTileMinAspect does."
+    },
+    "faceTileMinAspect": {
+      "value": 0.97,
+      "calibratedOn": "Measured 2026-10-26 with the packaged face harness on 26 a6000 ARW + 12 JPEG real shots (20 faces labelled by eye) plus 12 synthetic sunglasses/glare variants (scripts/make-face-fixtures.ts): see NOTES.md Phase 8. Height/width of tile-pass (small) faces. Real 1.00-1.19 (n=9), false positives 0.90 (paint plate) and 0.94 (goose); midpoint-ish, leaning to keep faces."
+    },
+    "eyeOpenMaxBlink": {
+      "value": 0.35,
+      "calibratedOn": "Measured 2026-10-26 with the packaged face harness on 26 a6000 ARW + 12 JPEG real shots (20 faces labelled by eye) plus 12 synthetic sunglasses/glare variants (scripts/make-face-fixtures.ts): see NOTES.md Phase 8. Lower of the two eyeBlink scores. Real open eyes 0.01-0.18 (n=17); half-turned squinting smile 0.52 must stay unknown."
+    },
+    "eyeClosedMinBlink": {
+      "value": 0.6,
+      "calibratedOn": "Measured 2026-10-26 with the packaged face harness on 26 a6000 ARW + 12 JPEG real shots (20 faces labelled by eye) plus 12 synthetic sunglasses/glare variants (scripts/make-face-fixtures.ts): see NOTES.md Phase 8. Both eyes must reach it. Only ONE real closed-eye sample (Test-26.ARW, 0.88/0.95); occlusion pushed open eyes up to 0.58 (caught by the glare check). Recheck when more blink fixtures exist."
+    },
+    "faceMinFrontal": {
+      "value": 0.7,
+      "calibratedOn": "Measured 2026-10-26 with the packaged face harness on 26 a6000 ARW + 12 JPEG real shots (20 faces labelled by eye) plus 12 synthetic sunglasses/glare variants (scripts/make-face-fixtures.ts): see NOTES.md Phase 8. Narrower/wider eye width. Frontal faces 0.77-1.00 (closed-eye face 0.82), half-turned 0.53 and 0.60. Below it a closed reading becomes unknown."
+    },
+    "eyeMinContrast": {
+      "value": 8,
+      "calibratedOn": "Measured 2026-10-26 with the packaged face harness on 26 a6000 ARW + 12 JPEG real shots (20 faces labelled by eye) plus 12 synthetic sunglasses/glare variants (scripts/make-face-fixtures.ts): see NOTES.md Phase 8. Luma std dev inside the eye boxes. Real eyes 17.7-53.4 (n=17, closed 32.8), synthetic flat sunglasses 0.3-3.7. Real sunglasses carry reflections and may read higher: untested."
+    },
+    "eyeMaxGlarePct": {
+      "value": 25,
+      "calibratedOn": "Measured 2026-10-26 with the packaged face harness on 26 a6000 ARW + 12 JPEG real shots (20 faces labelled by eye) plus 12 synthetic sunglasses/glare variants (scripts/make-face-fixtures.ts): see NOTES.md Phase 8. % pixels >= highlightClipLevel inside the eye boxes. Real eyes 0-0.1%, synthetic glare 55-98%. Partial real glare on glasses: untested."
+    },
+    "faceMatchMaxDistance": {
+      "value": 1.0,
+      "calibratedOn": "Measured 2026-10-26 with the packaged face harness on 26 a6000 ARW + 12 JPEG real shots (20 faces labelled by eye) plus 12 synthetic sunglasses/glare variants (scripts/make-face-fixtures.ts): see NOTES.md Phase 8. Centre distance / mean face size for the same person in two frames with 2+ faces. Same person 0.18-0.20, different people ~2.1 (one 2-person pair, Test-9/Test-10.jpg). Single-face frames are matched without it."
+    },
+    "faceMatchMaxSizeRatio": {
+      "value": 1.5,
+      "calibratedOn": "Measured 2026-10-26 with the packaged face harness on 26 a6000 ARW + 12 JPEG real shots (20 faces labelled by eye) plus 12 synthetic sunglasses/glare variants (scripts/make-face-fixtures.ts): see NOTES.md Phase 8. Same person in the 2-person pair: ratio 1.04-1.13. Single-face burst Test-25/26 varies 1.65 (re-framed), which is why single-face frames skip position matching. Few samples."
     }
   }
 }

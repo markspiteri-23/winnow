@@ -1,7 +1,10 @@
 import { readdirSync } from "node:fs";
 import path from "node:path";
 import type { ExifTool } from "exiftool-vendored";
+import { compareFaces, measureFaces, type DetectedFace, type ShotFaces, type ShotFacesInput } from "./faces.ts";
+import { groupShots, type Group } from "./group.ts";
 import { imageLibVersions, loadOriented, probeImage, type ImageProbe } from "./image.ts";
+import { measureShots } from "./metrics.ts";
 import { cacheDir } from "./paths.ts";
 import { previewShots } from "./preview.ts";
 import { scanFolder } from "./scan.ts";
@@ -72,4 +75,51 @@ export async function faceSpikeImages(
     }
   }
   return { images, errors };
+}
+
+export interface FileFaces {
+  /** Shot path relative to the folder, as in `SpikeImage.file`. */
+  file: string;
+  faces: DetectedFace[];
+}
+
+export interface FaceReport {
+  groups: Group[];
+  shots: (ShotFaces & { file: string })[];
+  errors: FileError[];
+}
+
+/**
+ * Turns the renderer's raw detections into per-shot face flags: groups the folder's shots, measures each face on the
+ * same upright downscaled preview the detector saw, and judges every face against the same person in its group.
+ */
+export async function faceReport(folder: string | undefined, et: ExifTool, maxSide: number, detections: FileFaces[]): Promise<FaceReport> {
+  if (!folder) return { groups: [], shots: [], errors: [] };
+  const scan = await scanFolder(folder, et);
+  const previews = await previewShots(scan.shots, et, cacheDir());
+  const shotById = new Map(scan.shots.map((s) => [s.id, s]));
+  const detected = new Map(detections.map((d) => [path.join(folder, d.file), d.faces]));
+  const inputs = previews.previews.map((p) => ({
+    shotId: p.shotId,
+    path: p.path,
+    orientation: shotById.get(p.shotId)?.orientation ?? null,
+    lowConfidence: shotById.get(p.shotId)?.lowConfidence ?? false,
+  }));
+  const metrics = await measureShots(inputs);
+  const errors = [...scan.errors, ...previews.errors, ...metrics.errors];
+  const { groups } = groupShots(scan.shots, new Map(metrics.metrics.map((m) => [m.shotId, m])));
+  const measured: ShotFacesInput[] = [];
+  for (const input of inputs) {
+    try {
+      const px = await loadOriented(input.path, input.orientation, { maxSide, greyscale: true });
+      const data = new Float32Array(px.width * px.height);
+      for (let i = 0; i < data.length; i++) data[i] = px.data[i * px.channels] ?? 0;
+      const faces = detected.get(input.shotId) ?? [];
+      measured.push({ shotId: input.shotId, ...measureFaces(faces, { data, width: px.width, height: px.height }) });
+    } catch (err) {
+      errors.push({ path: input.shotId, error: err instanceof Error ? err.message : String(err) });
+    }
+  }
+  const shots = compareFaces(groups, measured).map((s) => ({ file: path.relative(folder, s.shotId), ...s }));
+  return { groups, shots, errors };
 }

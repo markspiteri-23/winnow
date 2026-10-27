@@ -21,7 +21,7 @@ if (out) {
     });
 }
 
-// Phase 7 spike: run the face landmarker worker over the images main prepared.
+// Face harness: run the face landmarker worker over the images main prepared, then let main judge the detections.
 async function faceSpike(): Promise<unknown> {
   const { images, errors } = await window.faucet.faceSpikeImages();
   const worker = new Worker(new URL("./face-worker.ts", import.meta.url), { type: "module" });
@@ -45,7 +45,8 @@ async function faceSpike(): Promise<unknown> {
     results.push({ file: img.file, width: img.width, height: img.height, ...r });
   }
   worker.terminate();
-  return { init, results, errors };
+  const report = await window.faucet.faceReport(results.map((r) => ({ file: r.file, faces: r.kind === "result" ? r.faces : [] })));
+  return { init, results, report, errors };
 }
 
 const face = document.getElementById("face");

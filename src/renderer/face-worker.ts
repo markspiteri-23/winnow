@@ -1,10 +1,11 @@
 /// <reference types="vite/client" />
-// Phase 7 spike: MediaPipe face landmarker in a module Web Worker (WASM, CPU delegate).
+// MediaPipe face landmarker in a module Web Worker (WASM, CPU delegate).
 // MediaPipe feeds images through WebGL, so it cannot run in a Node worker_thread; a renderer worker has OffscreenCanvas.
 import { FaceLandmarker } from "@mediapipe/tasks-vision";
 import loaderUrl from "@mediapipe/tasks-vision/vision_wasm_module_internal.js?url";
 import wasmUrl from "@mediapipe/tasks-vision/vision_wasm_module_internal.wasm?url";
 import modelUrl from "../../resources/models/face_landmarker.task?url";
+import type { DetectedFace } from "../core/faces.ts";
 
 export interface FaceRequest {
   id: number;
@@ -14,19 +15,9 @@ export interface FaceRequest {
   data: Uint8Array;
 }
 
-export interface SpikeFace {
-  /** Normalised 0-1 bounding box of the landmarks. */
-  box: { x: number; y: number; w: number; h: number };
-  /** "full" = found on the whole frame, "tile" = only on a crop (small face). */
-  pass: "full" | "tile";
-  /** Blendshape scores 0-1; high = closed. Left/right are the subject's own. */
-  eyeBlinkLeft: number;
-  eyeBlinkRight: number;
-}
-
 export type FaceResponse =
   | { kind: "ready"; initMs: number }
-  | { kind: "result"; id: number; ms: number; faces: SpikeFace[] }
+  | { kind: "result"; id: number; ms: number; faces: DetectedFace[] }
   | { kind: "error"; id?: number; error: string };
 
 const ctx = self as unknown as {
@@ -34,7 +25,7 @@ const ctx = self as unknown as {
   onmessage: ((e: MessageEvent<FaceRequest>) => void) | null;
 };
 
-type Box = SpikeFace["box"];
+type Box = DetectedFace["box"];
 
 function toRgba(req: FaceRequest): ImageData {
   const n = req.width * req.height;
@@ -55,6 +46,16 @@ function blink(categories: { categoryName: string; score: number }[], name: stri
   return categories.find((c) => c.categoryName === name)?.score ?? Number.NaN;
 }
 
+const eyeIndex = (c: { start: number; end: number }[]): number[] => [...new Set(c.flatMap((e) => [e.start, e.end]))];
+const LEFT_EYE = eyeIndex(FaceLandmarker.FACE_LANDMARKS_LEFT_EYE);
+const RIGHT_EYE = eyeIndex(FaceLandmarker.FACE_LANDMARKS_RIGHT_EYE);
+
+function boxOf(xs: number[], ys: number[]): Box {
+  const x = Math.min(...xs);
+  const y = Math.min(...ys);
+  return { x, y, w: Math.max(...xs) - x, h: Math.max(...ys) - y };
+}
+
 function crop(img: ImageData, x0: number, y0: number, w: number, h: number): ImageData {
   const out = new Uint8ClampedArray(w * h * 4);
   for (let y = 0; y < h; y++) {
@@ -72,19 +73,20 @@ function iou(a: Box, b: Box): number {
 }
 
 /** Faces in `img`, boxes mapped into the full frame (offset/size in px). */
-function detectIn(lm: FaceLandmarker, img: ImageData, ox: number, oy: number, fw: number, fh: number, pass: SpikeFace["pass"]): SpikeFace[] {
+function detectIn(lm: FaceLandmarker, img: ImageData, ox: number, oy: number, fw: number, fh: number, pass: DetectedFace["pass"]): DetectedFace[] {
   const res = lm.detect(img);
-  return res.faceLandmarks.map((pts, i): SpikeFace => {
+  return res.faceLandmarks.map((pts, i): DetectedFace => {
     const xs = pts.map((p) => (ox + p.x * img.width) / fw);
     const ys = pts.map((p) => (oy + p.y * img.height) / fh);
-    const x = Math.min(...xs);
-    const y = Math.min(...ys);
     const cats = res.faceBlendshapes[i]?.categories ?? [];
+    const eye = (idx: number[]): Box => boxOf(idx.map((k) => xs[k] ?? 0), idx.map((k) => ys[k] ?? 0));
     return {
-      box: { x, y, w: Math.max(...xs) - x, h: Math.max(...ys) - y },
+      box: boxOf(xs, ys),
       pass,
       eyeBlinkLeft: blink(cats, "eyeBlinkLeft"),
       eyeBlinkRight: blink(cats, "eyeBlinkRight"),
+      leftEye: eye(LEFT_EYE),
+      rightEye: eye(RIGHT_EYE),
     };
   });
 }
@@ -93,7 +95,7 @@ function detectIn(lm: FaceLandmarker, img: ImageData, ox: number, oy: number, fw
  * The bundled detector is BlazeFace short-range (192 px input, trained on large faces), so small faces are missed.
  * Second pass: overlapping tiles of a third of the long side; tile faces that overlap a full-frame face are dropped.
  */
-function detectTiled(lm: FaceLandmarker, img: ImageData): SpikeFace[] {
+function detectTiled(lm: FaceLandmarker, img: ImageData): DetectedFace[] {
   const faces = detectIn(lm, img, 0, 0, img.width, img.height, "full");
   const tile = Math.round(Math.max(img.width, img.height) / 3);
   const step = Math.round(tile / 2);

@@ -4,7 +4,7 @@ import path from "node:path";
 import { _electron as electron, expect, test } from "@playwright/test";
 import sharp from "sharp";
 
-// Phase 7 spike: the MediaPipe face landmarker loads and runs inside the PACKAGED app on both OSes.
+// The MediaPipe face landmarker loads and runs inside the PACKAGED app on both OSes, and main judges its detections.
 
 function packagedExecutable(): string {
   const release = path.resolve("release");
@@ -13,12 +13,22 @@ function packagedExecutable(): string {
   return path.join(release, dir ?? "mac", "Faucet.app", "Contents", "MacOS", "Faucet");
 }
 
-interface Face {
-  eyeBlinkLeft: number;
-  eyeBlinkRight: number;
+interface ShotFaces {
+  file: string;
+  faceCount: number;
+  allEyesOpen: boolean;
+  anyEyesClosed: boolean;
+  blinkVsSibling: boolean;
+  faces: { eyes: string }[];
 }
 
-async function runSpike(faceDir: string, outName: string): Promise<{ init: { kind: string; initMs?: number }; results: { kind: string; file: string; ms: number; faces: unknown[] }[] }> {
+interface Harness {
+  init: { kind: string; initMs?: number };
+  results: { kind: string; file: string; ms: number; faces: unknown[] }[];
+  report: { shots: ShotFaces[]; errors: unknown[] };
+}
+
+async function runSpike(faceDir: string, outName: string): Promise<Harness> {
   const env: Record<string, string> = {};
   for (const [k, v] of Object.entries(process.env)) if (v !== undefined) env[k] = v;
   env["FAUCET_FACE_DIR"] = faceDir;
@@ -46,6 +56,10 @@ test("face landmarker runs in the packaged app on generated images", async () =>
     const data = await runSpike(dir, `face-${process.platform}.json`);
     expect(data.init.kind).toBe("ready");
     expect(data.results).toEqual([expect.objectContaining({ kind: "result", file: "grey.jpg", faces: [] })]);
+    expect(data.report.errors).toEqual([]);
+    expect(data.report.shots).toEqual([
+      expect.objectContaining({ file: "grey.jpg", faceCount: 0, allEyesOpen: false, anyEyesClosed: false, blinkVsSibling: false }),
+    ]);
   } finally {
     rmSync(dir, { recursive: true, force: true });
   }
@@ -59,13 +73,13 @@ test("face landmarker on real fixtures", async () => {
   test.skip(!faceFixtures, "FAUCET_FIXTURES not set");
   const data = await runSpike(faceFixtures, `face-fixtures-${process.platform}.json`);
   expect(data.init.kind).toBe("ready");
-  const byFile = new Map(data.results.map((r) => [r.file, r]));
-  const faces = (f: string): Face[] => (byFile.get(f)?.faces ?? []) as Face[];
-  const closed = (f: Face): boolean => f.eyeBlinkLeft > 0.5 && f.eyeBlinkRight > 0.5;
-  // Labelled by eye. 0.5 is a spike cut-off only; Phase 8 calibrates the real one.
-  expect(faces("Test-26.ARW").map(closed)).toEqual([true]); // eyes closed, looking down
-  expect(faces("Test-25.ARW").map(closed)).toEqual([false]); // same person, eyes open, small face (tile pass)
-  expect(faces("Test-12.jpg").map(closed)).toEqual([false]); // close portrait
-  expect(faces("Test-9.jpg").map(closed)).toEqual([false, false]); // two people
-  expect(faces("Test-10.jpg")).toHaveLength(2); // two people, one half-turned (tile pass)
+  const byFile = new Map(data.report.shots.map((r) => [r.file, r]));
+  const shot = (f: string): ShotFaces | undefined => byFile.get(f);
+  const eyes = (f: string): string[] => shot(f)?.faces.map((x) => x.eyes) ?? [];
+  // Labelled by eye; thresholds in weights.json (Phase 8).
+  expect(shot("Test-26.ARW")).toMatchObject({ faceCount: 1, anyEyesClosed: true, blinkVsSibling: true }); // eyes closed, looking down
+  expect(shot("Test-25.ARW")).toMatchObject({ faceCount: 1, allEyesOpen: true }); // same burst, same person, eyes open (small face)
+  expect(shot("Test-12.jpg")).toMatchObject({ faceCount: 1, allEyesOpen: true }); // close portrait
+  expect(eyes("Test-9.jpg")).toEqual(["open", "open"]); // two people
+  expect(shot("Test-10.jpg")).toMatchObject({ faceCount: 2, anyEyesClosed: false }); // two people, one half-turned (tile pass)
 });
