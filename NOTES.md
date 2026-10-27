@@ -80,6 +80,12 @@
 - Baseline: tune 14/28 rejects, 4/7 picks; hold-out 15/28, 1/7; 0 false rejects. Missed rejects are defocus-2 / motion-15 (49-89% of sharpest), overlapping real siblings (>= 0.83), so blurRejectRatio not raised. Missed picks = noisy copy beats its clean source by < 0.01 (added noise lifts Tenengrad; noise correction ~0 on previews): a real metric weakness, left for a later phase. No weights changed.
 - Gotcha fixed: generated variants had no dates, so the filename-number fallback read "defocus-5"/"motion-15" as frame numbers and split every burst; `make-fixtures.ts` now stamps source time + 1 s per variant (regenerate after pulling).
 
+## Phase 11: XMP sidecars + CSV
+- `faucet cull <folder> [--apply] [--sidecar adobe|darktable] [--csv out.csv]` (`sidecar.ts`, `csv.ts`): dry-run lists create/update/unchanged/refused; pick = Rating 4 + Label Green, reject = Rating -1 (label left alone), kept shots get no sidecar. Existing sidecar (either convention, any case) wins over `--sidecar`. CSV is written even in dry-run (new file, `.csv` only; BOM + CRLF for Excel).
+- Write = copy to `.xmp.bak` (overwritten each run, so it holds the state before the last write) -> exiftool writes a temp `*.tmp.xmp` copy -> rename over the sidecar, retried on EBUSY/EPERM/EACCES (6 tries, 100 ms doubling). Unchanged values = no write, no .bak.
+- Exiftool rewrites the whole packet (layout changes, adds `XMP-x:XMPToolkit`) but keeps every property; the test compares all XMP tags before/after. Unparsable = read warnings ("XMP format error") OR exiftool refusing to write ("Not a valid XMP"): both refused, file untouched.
+- Gotchas: picks overwrite any existing rating (a user's 5 stars becomes 4; .bak keeps it, revisit in Phase 15). A shot that changes pick -> reject keeps the Green label. Lock retry is tested by injecting `rename`; no real Windows lock in CI.
+
 ## Measured values
 
 | Weight | Value | Measured on | Notes |

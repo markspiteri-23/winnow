@@ -1,7 +1,8 @@
-import { readFileSync, statSync } from "node:fs";
+import { readFileSync, statSync, writeFileSync } from "node:fs";
 import path from "node:path";
 import { parseArgs } from "node:util";
 import { ExifTool } from "exiftool-vendored";
+import { cullCsv } from "../core/csv.ts";
 import { cull, type CullResult } from "../core/cull.ts";
 import { runEval, validateLabels, type EvalReport, type SetReport } from "../core/eval.ts";
 import { groupShots, type GroupResult } from "../core/group.ts";
@@ -9,6 +10,8 @@ import { measureShots, type MetricsResult } from "../core/metrics.ts";
 import { cacheDir } from "../core/paths.ts";
 import { previewShots, type PreviewResult } from "../core/preview.ts";
 import { scanFolder, type ScanResult } from "../core/scan.ts";
+import { writeSidecars, type SidecarResult, type SidecarStyle } from "../core/sidecar.ts";
+import type { FileError } from "../core/types.ts";
 
 const HELP = `faucet - local photo culler (no cloud)
 
@@ -19,11 +22,14 @@ Usage:
   faucet groups <folder> [--json]     Group bursts / near-duplicates, with the reason for every split or join
   faucet cull <folder> [--json]       Pick / reject / keep per shot, judged within its group, with reasons
                                       (cached; Ctrl+C cancels, rerun resumes; no eye checks: faces need the app)
+                                      Shows the XMP sidecars it would write (pick = 4 stars + Green, reject = -1)
   faucet eval <fixtures> [--json]     Score cull against your labels (<fixtures>/labels.json), tune and hold-out apart
 
 Options:
   --json     Machine-readable output
-  --apply    Write sidecars (default is dry-run)
+  --apply    Write sidecars (default is dry-run). Only Rating/Label change; old sidecar kept as .xmp.bak
+  --sidecar adobe|darktable   New sidecar name: IMG_1.xmp (default) or IMG_1.ARW.xmp; existing ones are followed
+  --csv <file.csv>       Also export picks/rejects with groups, scores and reasons (written even in dry-run)
   --labels <file.json>   Labels for eval (default <fixtures>/labels.json)
   --offsets <file.json>  Per-camera clock offsets in seconds, e.g. {"ILCE-6000": -3600}
   -h, --help Show this help
@@ -115,6 +121,22 @@ function cullTable(result: CullResult): string {
   return out.join("\n") + "\n";
 }
 
+function sidecarTable(root: string, results: SidecarResult[], errors: FileError[], applied: boolean): string {
+  const rows = results.map((r) => [
+    r.action,
+    path.relative(root, r.sidecar),
+    `rating ${r.target.rating}${r.target.label ? `, label ${r.target.label}` : ""}`,
+    r.reason ?? "",
+  ]);
+  const out = rows.length ? render(["sidecar", "file", "value", "note"], rows) : [];
+  for (const e of errors) out.push(`error: ${path.relative(root, e.path)}: ${e.error}`);
+  const count = (k: string): number => results.filter((r) => r.action === k).length;
+  const summary = `${count("create")} create, ${count("update")} update, ${count("unchanged")} unchanged, ${count("refused")} refused, ${errors.length} errors`;
+  if (applied) out.push(`sidecars written: ${results.filter((r) => r.written).length} (${summary})`);
+  else out.push(`dry run, nothing written (${summary}); pass --apply to write`);
+  return out.join("\n") + "\n";
+}
+
 function evalTable(report: EvalReport, errors: string[]): string {
   const pct = (r: number | null): string => (r === null ? "-" : `${(r * 100).toFixed(0)}%`);
   const row = (name: string, r: SetReport): string[] => [
@@ -144,6 +166,8 @@ export async function main(argv: string[]): Promise<number> {
       apply: { type: "boolean" },
       offsets: { type: "string" },
       labels: { type: "string" },
+      sidecar: { type: "string" },
+      csv: { type: "string" },
     },
   });
   const [command, folder] = positionals;
@@ -153,6 +177,15 @@ export async function main(argv: string[]): Promise<number> {
   }
   if (!["scan", "previews", "metrics", "groups", "cull", "eval"].includes(command) || !folder) {
     process.stderr.write(`faucet: unknown command or missing folder\n\n${HELP}`);
+    return 2;
+  }
+  const style = values.sidecar ?? "adobe";
+  if (style !== "adobe" && style !== "darktable") {
+    process.stderr.write(`faucet: --sidecar must be adobe or darktable\n`);
+    return 2;
+  }
+  if (values.csv !== undefined && path.extname(values.csv).toLowerCase() !== ".csv") {
+    process.stderr.write(`faucet: --csv needs a .csv file name\n`);
     return 2;
   }
   const root = path.resolve(folder);
@@ -183,8 +216,16 @@ export async function main(argv: string[]): Promise<number> {
             if (tty) process.stderr.write(`\r${done}/${total} shots${done === total ? "\n" : ""}`);
           },
         });
-        process.stdout.write(values.json ? JSON.stringify(result, null, 2) + "\n" : cullTable(result));
-        return result.cancelled ? 130 : 0;
+        if (result.cancelled) {
+          process.stdout.write(values.json ? JSON.stringify(result, null, 2) + "\n" : cullTable(result));
+          return 130;
+        }
+        const apply = values.apply === true;
+        const sidecars = await writeSidecars(result.shots, result.verdicts, et, { style: style as SidecarStyle, apply });
+        if (values.csv) writeFileSync(values.csv, cullCsv(root, result.shots, result.groups, result.verdicts, sidecars.results));
+        const json = { ...result, sidecars: { applied: apply, ...sidecars } };
+        process.stdout.write(values.json ? JSON.stringify(json, null, 2) + "\n" : cullTable(result) + sidecarTable(root, sidecars.results, sidecars.errors, apply));
+        return 0;
       } finally {
         process.off("SIGINT", onSigint);
       }

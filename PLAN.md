@@ -102,7 +102,7 @@ Build: `labels.json` (your pick/reject per fixture, each marked `tune` or `holdo
 Done when: baseline recorded; tune weights on the tune set only. False rejects of photos you love are the metric that matters most.
 Prompt: "Do Phase 10 from PLAN.md."
 
-### [ ] Phase 11 (M): XMP sidecar writer + CSV
+### [x] Phase 11 (M): XMP sidecar writer + CSV
 Build: write/merge sidecars (Rating, Label only). Default `name.xmp`, optional `name.ARW.xmp` setting, and follow the convention of an existing sidecar if one is present. `.xmp.bak` first, atomic write, retry on Windows locks, refuse unparsable sidecars. Dry-run default, `--apply` to write. `--csv` export of picks/rejects for anything XMP can't carry.
 Done when: a test proves an existing sidecar's other properties survive unchanged (runs on both OSes), plus tests for lock retry and unparsable files.
 MILESTONE: the CLI is a useful tool on both OSes here. Use it on a real shoot before building UI.
