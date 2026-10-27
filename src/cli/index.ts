@@ -2,6 +2,7 @@ import { readFileSync, statSync } from "node:fs";
 import path from "node:path";
 import { parseArgs } from "node:util";
 import { ExifTool } from "exiftool-vendored";
+import { cull, type CullResult } from "../core/cull.ts";
 import { groupShots, type GroupResult } from "../core/group.ts";
 import { measureShots, type MetricsResult } from "../core/metrics.ts";
 import { cacheDir } from "../core/paths.ts";
@@ -15,6 +16,8 @@ Usage:
   faucet previews <folder> [--json]   Extract/cache the best preview per shot and report its size
   faucet metrics <folder> [--json]    Sharpness, noise and exposure per shot (from its preview)
   faucet groups <folder> [--json]     Group bursts / near-duplicates, with the reason for every split or join
+  faucet cull <folder> [--json]       Pick / reject / keep per shot, judged within its group, with reasons
+                                      (cached; Ctrl+C cancels, rerun resumes; no eye checks: faces need the app)
 
 Options:
   --json     Machine-readable output
@@ -92,6 +95,23 @@ function groupsTable(root: string, result: GroupResult, errors: string[], second
   return out.join("\n") + "\n";
 }
 
+function cullTable(result: CullResult): string {
+  const verdict = new Map(result.verdicts.map((v) => [v.shotId, v]));
+  const rows = result.groups.flatMap((g) =>
+    g.shotIDs.map((id) => {
+      const v = verdict.get(id);
+      return [g.id, path.relative(result.root, id), v?.verdict ?? "-", v ? v.score.toFixed(2) : "-", v?.reasons.join("; ") ?? ""];
+    }),
+  );
+  const out = render(["group", "shot", "verdict", "score", "reasons"], rows);
+  for (const e of result.errors) out.push(`error: ${path.relative(result.root, e.path)}: ${e.error}`);
+  const count = (k: string): number => result.verdicts.filter((v) => v.verdict === k).length;
+  const { shots, cached, seconds } = result.stats;
+  if (result.cancelled) out.push(`cancelled: ${cached + result.stats.measured} of ${shots} shots measured and cached; rerun to resume`);
+  else out.push(`${shots} shots in ${result.groups.length} groups: ${count("pick")} pick, ${count("reject")} reject, ${count("none")} kept; ${cached} cached, ${result.errors.length} errors, ${seconds.toFixed(2)}s`);
+  return out.join("\n") + "\n";
+}
+
 export async function main(argv: string[]): Promise<number> {
   const { values, positionals } = parseArgs({
     args: argv,
@@ -108,7 +128,7 @@ export async function main(argv: string[]): Promise<number> {
     process.stdout.write(HELP);
     return 0;
   }
-  if (!["scan", "previews", "metrics", "groups"].includes(command) || !folder) {
+  if (!["scan", "previews", "metrics", "groups", "cull"].includes(command) || !folder) {
     process.stderr.write(`faucet: unknown command or missing folder\n\n${HELP}`);
     return 2;
   }
@@ -119,6 +139,26 @@ export async function main(argv: string[]): Promise<number> {
   }
   const et = new ExifTool();
   try {
+    if (command === "cull") {
+      const cameraOffsets = values.offsets ? (JSON.parse(readFileSync(values.offsets, "utf8")) as Record<string, number>) : undefined;
+      const abort = new AbortController();
+      const onSigint = (): void => abort.abort();
+      process.once("SIGINT", onSigint);
+      const tty = process.stderr.isTTY && !values.json;
+      try {
+        const result = await cull(root, et, {
+          signal: abort.signal,
+          ...(cameraOffsets ? { cameraOffsets } : {}),
+          onProgress: (done, total) => {
+            if (tty) process.stderr.write(`\r${done}/${total} shots${done === total ? "\n" : ""}`);
+          },
+        });
+        process.stdout.write(values.json ? JSON.stringify(result, null, 2) + "\n" : cullTable(result));
+        return result.cancelled ? 130 : 0;
+      } finally {
+        process.off("SIGINT", onSigint);
+      }
+    }
     const start = performance.now();
     const result = await scanFolder(root, et);
     if (command === "metrics" || command === "groups") {

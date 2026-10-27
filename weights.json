@@ -76,6 +76,34 @@
     "faceMatchMaxSizeRatio": {
       "value": 1.5,
       "calibratedOn": "Measured 2026-10-26 with the packaged face harness on 26 a6000 ARW + 12 JPEG real shots (20 faces labelled by eye) plus 12 synthetic sunglasses/glare variants (scripts/make-face-fixtures.ts): see NOTES.md Phase 8. Same person in the 2-person pair: ratio 1.04-1.13. Single-face burst Test-25/26 varies 1.65 (re-framed), which is why single-face frames skip position matching. Few samples."
+    },
+    "blurRejectRatio": {
+      "value": 0.6,
+      "calibratedOn": "Measured 2026-10-26 on $FAUCET_FIXTURES: see NOTES.md Phase 9. Shot sharpness / sharpest sibling. Generated variants of 7 real sources: defocus-5 0.43-0.56 and night 0.27-0.30 (rejected), defocus-2 0.76-0.86 and motion-15 0.64-0.79 (kept, only noted). Real sharp burst siblings >= 0.83 (n=8 groups)."
+    },
+    "blurRejectMinSimilarity": {
+      "value": 0.6,
+      "calibratedOn": "Measured 2026-10-26 on $FAUCET_FIXTURES: see NOTES.md Phase 9. Layout similarity to the sharpest sibling needed before a blur reject. Known false merge Test-4/Test-5.ARW (portrait vs sky) is 0.49; real bursts 0.40-0.98, so some real bursts get no blur reject (conservative)."
+    },
+    "clipRejectPct": {
+      "value": 30,
+      "calibratedOn": "Measured 2026-10-26 on $FAUCET_FIXTURES: see NOTES.md Phase 9. % clipped highlights or crushed shadows for an exposure reject, only when a sibling has under half as much. Keepers reach 23.7% highlights (Test-4.jpg, bright hazy sky) and 3.8% shadows; no real badly exposed fixture yet."
+    },
+    "scoreWeightSharpness": {
+      "value": 0.6,
+      "calibratedOn": "PROVISIONAL (Phase 9): not tuned. Weight of sharpness / sharpest sibling in the group score. Tune on the tune set in Phase 10."
+    },
+    "scoreWeightExposure": {
+      "value": 0.2,
+      "calibratedOn": "PROVISIONAL (Phase 9): not tuned. Weight of (1 - clipping / clipRejectPct). Tune on the tune set in Phase 10."
+    },
+    "scoreWeightEyes": {
+      "value": 0.2,
+      "calibratedOn": "PROVISIONAL (Phase 9): not tuned. Weight of mean eyesOpen over faces (1 when no face data). Tune on the tune set in Phase 10."
+    },
+    "poolConcurrency": {
+      "value": 4,
+      "calibratedOn": "Measured 2026-10-27, scripts/bench-cull.ts 2000 generated 1600x1067 JPEGs, M-series Mac (10 CPUs): cold 214/127/98/85 ms per shot at 1/2/4/6 workers. 4 -> 6 gains only 13%, so 4 leaves CPU for the UI. Also capped at CPUs - 1."
     }
   }
 }

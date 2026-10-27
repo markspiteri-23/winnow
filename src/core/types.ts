@@ -26,3 +26,14 @@ export interface FileError {
   path: string;
   error: string;
 }
+
+export type VerdictKind = "pick" | "reject" | "none";
+
+/** Outcome for one shot, always explained. `score` 0-1 is only comparable within the shot's group. */
+export interface Verdict {
+  shotId: string;
+  groupId: string;
+  verdict: VerdictKind;
+  score: number;
+  reasons: string[];
+}

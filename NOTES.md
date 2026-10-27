@@ -67,6 +67,13 @@
 - Size cannot separate false positives (goose 51 px, paint plate 56 px vs real 53 px); tile-pass aspect >= 0.97 does. Single-face frames are taken as the same person (burst re-framing moved Test-25/26 by 1.7 face sizes).
 - Gotcha: glare is checked before contrast because a fully clipped eye is also flat. Phase touched 11 files (4 docs/config); not split, the IPC wiring only makes sense together.
 
+### Phase 9: Scoring, cache, workers
+- `faucet cull <folder> [--json]` = scan -> cache split -> previews -> worker pool (`pool.ts` + `metrics-worker.ts`, loaded as .ts by Node 24 type stripping: erasable syntax only; Electron will need it bundled) -> group -> `scoreGroups` (`score.ts`). Cache `cacheDir()/metrics`, key = every file's path+mtime+size + ANALYSIS_VERSION + analysis weights (scoring weights excluded, so Phase 10 tuning keeps it). Ctrl+C cancels; each result is cached as it lands, so a rerun resumes.
+- Rejects are relative only: blur <= 0.6 of the sharpest sibling AND similarity >= 0.6 AND not lowConfidence; clipping >= 30% AND a sibling has under half; blink only via `blinkVsSibling`. Singles never picked or rejected; a group never loses every frame. Real fixtures: 0 rejects, 1 pick per burst. Keepers clip up to 23.7% (hazy sky), so no absolute exposure reject.
+- Gaps: CLI has no face data (MediaPipe runs only in the app renderer), so no blink rejects from the CLI; no real badly exposed or truly blurry in-burst fixture yet; score weights 0.6/0.2/0.2 are PROVISIONAL for Phase 10.
+- Bench 2000 generated JPEGs (`npx tsx scripts/bench-cull.ts 2000 1 2 4 6`, 10-CPU M-series): cold 98 ms/shot at 4 workers (196 s), warm 3.1 ms/shot (6.2 s, almost all EXIF scan). Budget: cold <= 100 ms/shot, warm <= 5 ms/shot. Noise JPEGs are a worst case for decode.
+- Phase touched 12 files (9 new); not split because cache, pool and scoring are only testable together through `cull`.
+
 ## Measured values
 
 | Weight | Value | Measured on | Notes |
@@ -90,3 +97,8 @@
 | eyeMaxGlarePct | 25 | 17 real + 6 synthetic glare | real <= 0.1%, synthetic >= 55% |
 | faceMatchMaxDistance | 1.0 | one 2-person pair | same 0.18-0.20, other ~2.1 |
 | faceMatchMaxSizeRatio | 1.5 | one 2-person pair | same 1.04-1.13 |
+| blurRejectRatio | 0.6 | 7 sources x 5 generated variants + 8 real bursts | defocus-5 <= 0.56, mild >= 0.64, real siblings >= 0.83 |
+| blurRejectMinSimilarity | 0.6 | 1 known false merge | Test-4/5.ARW at 0.49 |
+| clipRejectPct | 30 | 38 real shots | keepers up to 23.7% highlights, 3.8% shadows |
+| scoreWeightSharpness / Exposure / Eyes | 0.6 / 0.2 / 0.2 | not measured (provisional) | Phase 10 |
+| poolConcurrency | 4 | 2000 generated JPEGs | 214/127/98/85 ms per shot at 1/2/4/6 |

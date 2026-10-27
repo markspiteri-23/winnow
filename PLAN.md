@@ -92,7 +92,7 @@ Build: per Shot faceCount, per-face eyes-open score, `allEyesOpen`, `anyEyesClos
 Done when: the 3 blink fixtures flag correctly, group shot reports per-face results, no-face photos unaffected, thresholds calibrated and recorded.
 Prompt: "Do Phase 8 from PLAN.md."
 
-### [ ] Phase 9 (M): Scoring, cache, workers
+### [x] Phase 9 (M): Scoring, cache, workers
 Build: scores relative to group siblings (rank or z-score within group). Conservative hard-rejects: severe blur (skipped when `lowConfidence`), heavy clipping, eyes closed only if another frame in the group has them open. Best-per-group pick. `reasons[]` on every verdict. Cache keyed by path+mtime+size with correct invalidation. Worker pool with modest concurrency, progress, cancel, resume. One failing file never aborts. `faucet cull <folder> [--json]`.
 Done when: fixtures look sane; second run near-instant; benchmark on 2,000 generated images recorded with a time budget in NOTES.md.
 Prompt: "Do Phase 9 from PLAN.md."
