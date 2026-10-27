@@ -1,16 +1,16 @@
 {
   "tune": {
-    "labelled": 30,
+    "labelled": 42,
     "missing": [],
     "rejects": {
-      "total": 20,
-      "caught": 10,
+      "total": 28,
+      "caught": 14,
       "rate": 0.5
     },
     "picks": {
-      "total": 5,
-      "surfaced": 3,
-      "rate": 0.6
+      "total": 7,
+      "surfaced": 4,
+      "rate": 0.571
     },
     "falseRejects": {
       "count": 0,
@@ -19,17 +19,17 @@
     }
   },
   "holdout": {
-    "labelled": 12,
+    "labelled": 42,
     "missing": [],
     "rejects": {
-      "total": 8,
-      "caught": 4,
-      "rate": 0.5
+      "total": 28,
+      "caught": 15,
+      "rate": 0.536
     },
     "picks": {
-      "total": 2,
+      "total": 7,
       "surfaced": 1,
-      "rate": 0.5
+      "rate": 0.143
     },
     "falseRejects": {
       "count": 0,

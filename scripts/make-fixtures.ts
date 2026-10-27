@@ -1,8 +1,10 @@
 // Makes labelled blur/noise variants of real photos, so ranking can be checked against known ground truth.
-// Usage: FAUCET_FIXTURES=/path npx tsx scripts/make-fixtures.ts [relative/source/path ...]
-// Writes $FAUCET_FIXTURES/generated/<source>-<variant>.jpg plus manifest.json. Originals are only read.
+// Usage: FAUCET_FIXTURES=/path npx tsx scripts/make-fixtures.ts [--out <folder>] [--holdout] [relative/source/path ...]
+// Writes $FAUCET_FIXTURES/<folder, default generated>/<source>-<variant>.jpg plus manifest.json. Originals are only read.
+// --holdout uses HOLDOUT_SOURCES and writes to generated-holdout: scenes never used for tuning (Phase 10 eval).
 import { mkdirSync, writeFileSync } from "node:fs";
 import path from "node:path";
+import { parseArgs } from "node:util";
 import { ExifTool } from "exiftool-vendored";
 import sharp, { type Sharp } from "sharp";
 import { loadOriented } from "../src/core/image.ts";
@@ -16,6 +18,12 @@ const DEFAULT_SOURCES = [
   "jpg /Test-3.jpg", "jpg /Test-5.jpg", "jpg /Test-8.jpg",
 ];
 
+// Distinct scenes that share no group with DEFAULT_SOURCES; never tune against these.
+const HOLDOUT_SOURCES = [
+  "ARW/Test.ARW", "ARW/Test-2.ARW", "ARW/Test-15.ARW", "ARW/Test-19.ARW",
+  "ARW/Test-21.ARW", "ARW/Test-22.ARW", "ARW/Test-23.ARW",
+];
+
 /** Label per variant: "sharp" frames must outrank every "blurry" frame made from the same source. */
 export const VARIANTS = {
   "noisy": "sharp",
@@ -27,8 +35,9 @@ export const VARIANTS = {
 
 const root = process.env.FAUCET_FIXTURES;
 if (!root) throw new Error("set FAUCET_FIXTURES");
-const sources = process.argv.length > 2 ? process.argv.slice(2) : DEFAULT_SOURCES;
-const outDir = path.join(root, "generated");
+const { values: args, positionals } = parseArgs({ allowPositionals: true, options: { out: { type: "string" }, holdout: { type: "boolean" } } });
+const sources = positionals.length ? positionals : args.holdout ? HOLDOUT_SOURCES : DEFAULT_SOURCES;
+const outDir = path.join(root, args.out ?? (args.holdout ? "generated-holdout" : "generated"));
 mkdirSync(outDir, { recursive: true });
 
 // Seeded Gaussian noise so reruns produce identical files.

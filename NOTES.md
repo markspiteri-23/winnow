@@ -76,8 +76,8 @@
 
 ## Phase 10: Eval harness
 - `faucet eval <fixtures>` reads `<fixtures>/labels.json` ({photos: {"rel/path": {label: pick|reject|none, set: tune|holdout}}}), culls each labelled top-level folder separately, reports rejects caught / picks surfaced (group pick, or alone and not rejected) / false rejects per set. `npm run check:eval [-- --update]` fails if hold-out is worse than `eval/baseline.json` (rate drop > 0.05 or any new false reject); skips without FAUCET_FIXTURES. `check:weights` runs in CI; on `v*` tags `--release` also fails on PROVISIONAL notes (10 today).
-- labels.json so far = 42 generated variants auto-labelled from the manifest (source pick, noisy none, blurred reject); hold-out = Test-6.ARW + jpg/Test-8 variants, which Phase 9 already saw for blurRejectRatio, so it is not truly unseen. REAL photos still need your labels: that is the hold-out that matters.
-- Baseline: tune 10/20 rejects, 3/5 picks; hold-out 4/8, 1/2; 0 false rejects. Missed rejects are defocus-2 / motion-15 (52-89% of sharpest), overlapping real siblings (>= 0.83), so blurRejectRatio not raised. Missed picks = noisy copy beats its source by < 0.01 (added noise lifts Tenengrad). No weights changed.
+- labels.json is fully generated, no hand labels: tune = `generated/` (7 sources), hold-out = `generated-holdout/` (`make-fixtures.ts --holdout`: Test, Test-2/15/19/21/22/23.ARW, scenes sharing no group with tune sources; never tune against it). Labels from each manifest: source pick, noisy none, blurred reject.
+- Baseline: tune 14/28 rejects, 4/7 picks; hold-out 15/28, 1/7; 0 false rejects. Missed rejects are defocus-2 / motion-15 (49-89% of sharpest), overlapping real siblings (>= 0.83), so blurRejectRatio not raised. Missed picks = noisy copy beats its clean source by < 0.01 (added noise lifts Tenengrad; noise correction ~0 on previews): a real metric weakness, left for a later phase. No weights changed.
 - Gotcha fixed: generated variants had no dates, so the filename-number fallback read "defocus-5"/"motion-15" as frame numbers and split every burst; `make-fixtures.ts` now stamps source time + 1 s per variant (regenerate after pulling).
 
 ## Measured values
