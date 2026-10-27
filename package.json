@@ -16,6 +16,8 @@
     "test": "vitest run --dir src",
     "test:e2e": "playwright test e2e",
     "check:security": "node scripts/check-security.mjs",
+    "check:weights": "node scripts/check-weights.mjs",
+    "check:eval": "tsx scripts/check-eval.ts",
     "cli": "tsx src/cli/index.ts"
   },
   "devDependencies": {

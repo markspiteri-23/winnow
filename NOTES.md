@@ -74,6 +74,12 @@
 - Bench 2000 generated JPEGs (`npx tsx scripts/bench-cull.ts 2000 1 2 4 6`, 10-CPU M-series): cold 98 ms/shot at 4 workers (196 s), warm 3.1 ms/shot (6.2 s, almost all EXIF scan). Budget: cold <= 100 ms/shot, warm <= 5 ms/shot. Noise JPEGs are a worst case for decode.
 - Phase touched 12 files (9 new); not split because cache, pool and scoring are only testable together through `cull`.
 
+## Phase 10: Eval harness
+- `faucet eval <fixtures>` reads `<fixtures>/labels.json` ({photos: {"rel/path": {label: pick|reject|none, set: tune|holdout}}}), culls each labelled top-level folder separately, reports rejects caught / picks surfaced (group pick, or alone and not rejected) / false rejects per set. `npm run check:eval [-- --update]` fails if hold-out is worse than `eval/baseline.json` (rate drop > 0.05 or any new false reject); skips without FAUCET_FIXTURES. `check:weights` runs in CI; on `v*` tags `--release` also fails on PROVISIONAL notes (10 today).
+- labels.json so far = 42 generated variants auto-labelled from the manifest (source pick, noisy none, blurred reject); hold-out = Test-6.ARW + jpg/Test-8 variants, which Phase 9 already saw for blurRejectRatio, so it is not truly unseen. REAL photos still need your labels: that is the hold-out that matters.
+- Baseline: tune 10/20 rejects, 3/5 picks; hold-out 4/8, 1/2; 0 false rejects. Missed rejects are defocus-2 / motion-15 (52-89% of sharpest), overlapping real siblings (>= 0.83), so blurRejectRatio not raised. Missed picks = noisy copy beats its source by < 0.01 (added noise lifts Tenengrad). No weights changed.
+- Gotcha fixed: generated variants had no dates, so the filename-number fallback read "defocus-5"/"motion-15" as frame numbers and split every burst; `make-fixtures.ts` now stamps source time + 1 s per variant (regenerate after pulling).
+
 ## Measured values
 
 | Weight | Value | Measured on | Notes |

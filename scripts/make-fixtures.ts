@@ -56,10 +56,19 @@ try {
     const raw = { width: px.width, height: px.height, channels: px.channels as 3 };
     const base = (): Sharp => sharp(px.data, { raw });
     const stem = rel.replace(/[\\/ ]+/g, "_").replace(/\.[^.]+$/, "");
+    // Variants get the source's capture time + 1 s each, so they group as one dated burst
+    // (undated, the filename-number fallback would read "defocus-5" / "motion-15" as frame numbers).
+    const t0 = shot.captureDate ? Date.parse(shot.captureDate.slice(0, 19) + "Z") : null;
+    let frame = 0;
     const write = async (variant: string, img: Sharp | Buffer): Promise<void> => {
       const file = `${stem}-${variant}.jpg`;
       const s = Buffer.isBuffer(img) ? sharp(img, { raw }) : img;
       await s.jpeg({ quality: 92 }).toFile(path.join(outDir, file));
+      if (t0 !== null) {
+        const d = new Date(t0 + 1000 * frame++).toISOString();
+        const DateTimeOriginal = `${d.slice(0, 10).replaceAll("-", ":")} ${d.slice(11, 19)}`;
+        await et.write(path.join(outDir, file), { DateTimeOriginal, SubSecTimeOriginal: "000" }, ["-overwrite_original"]);
+      }
       manifest.push({ source: rel, file, variant, label: variant === "source" ? "sharp" : VARIANTS[variant as keyof typeof VARIANTS] });
     };
     await write("source", base());

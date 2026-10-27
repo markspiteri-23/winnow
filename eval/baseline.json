@@ -1,0 +1,40 @@
+{
+  "tune": {
+    "labelled": 30,
+    "missing": [],
+    "rejects": {
+      "total": 20,
+      "caught": 10,
+      "rate": 0.5
+    },
+    "picks": {
+      "total": 5,
+      "surfaced": 3,
+      "rate": 0.6
+    },
+    "falseRejects": {
+      "count": 0,
+      "ofPicks": 0,
+      "shots": []
+    }
+  },
+  "holdout": {
+    "labelled": 12,
+    "missing": [],
+    "rejects": {
+      "total": 8,
+      "caught": 4,
+      "rate": 0.5
+    },
+    "picks": {
+      "total": 2,
+      "surfaced": 1,
+      "rate": 0.5
+    },
+    "falseRejects": {
+      "count": 0,
+      "ofPicks": 0,
+      "shots": []
+    }
+  }
+}

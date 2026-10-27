@@ -97,7 +97,7 @@ Build: scores relative to group siblings (rank or z-score within group). Conserv
 Done when: fixtures look sane; second run near-instant; benchmark on 2,000 generated images recorded with a time budget in NOTES.md.
 Prompt: "Do Phase 9 from PLAN.md."
 
-### [ ] Phase 10 (S): Eval harness
+### [x] Phase 10 (S): Eval harness
 Build: `labels.json` (your pick/reject per fixture, each marked `tune` or `holdout`). `faucet eval` reports % of your rejects caught, % of your picks surfaced as group-best, false-reject count, separately for tune and hold-out. Commit baseline numbers (JSON only, no photos). Regression script fails if hold-out gets worse than baseline beyond a tolerance. Script that fails a release tag if any `weights.json` value lacks `calibratedOn`.
 Done when: baseline recorded; tune weights on the tune set only. False rejects of photos you love are the metric that matters most.
 Prompt: "Do Phase 10 from PLAN.md."

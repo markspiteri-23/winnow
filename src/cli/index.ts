@@ -3,6 +3,7 @@ import path from "node:path";
 import { parseArgs } from "node:util";
 import { ExifTool } from "exiftool-vendored";
 import { cull, type CullResult } from "../core/cull.ts";
+import { runEval, validateLabels, type EvalReport, type SetReport } from "../core/eval.ts";
 import { groupShots, type GroupResult } from "../core/group.ts";
 import { measureShots, type MetricsResult } from "../core/metrics.ts";
 import { cacheDir } from "../core/paths.ts";
@@ -18,10 +19,12 @@ Usage:
   faucet groups <folder> [--json]     Group bursts / near-duplicates, with the reason for every split or join
   faucet cull <folder> [--json]       Pick / reject / keep per shot, judged within its group, with reasons
                                       (cached; Ctrl+C cancels, rerun resumes; no eye checks: faces need the app)
+  faucet eval <fixtures> [--json]     Score cull against your labels (<fixtures>/labels.json), tune and hold-out apart
 
 Options:
   --json     Machine-readable output
   --apply    Write sidecars (default is dry-run)
+  --labels <file.json>   Labels for eval (default <fixtures>/labels.json)
   --offsets <file.json>  Per-camera clock offsets in seconds, e.g. {"ILCE-6000": -3600}
   -h, --help Show this help
 `;
@@ -112,6 +115,25 @@ function cullTable(result: CullResult): string {
   return out.join("\n") + "\n";
 }
 
+function evalTable(report: EvalReport, errors: string[]): string {
+  const pct = (r: number | null): string => (r === null ? "-" : `${(r * 100).toFixed(0)}%`);
+  const row = (name: string, r: SetReport): string[] => [
+    name,
+    r.labelled.toString(),
+    `${r.rejects.caught}/${r.rejects.total} (${pct(r.rejects.rate)})`,
+    `${r.picks.surfaced}/${r.picks.total} (${pct(r.picks.rate)})`,
+    `${r.falseRejects.count} (${r.falseRejects.ofPicks} picks)`,
+    r.missing.length.toString(),
+  ];
+  const out = render(["set", "labelled", "rejects caught", "picks surfaced", "false rejects", "missing"], [row("tune", report.tune), row("holdout", report.holdout)]);
+  for (const [name, r] of [["tune", report.tune], ["holdout", report.holdout]] as const) {
+    for (const s of r.falseRejects.shots) out.push(`false reject (${name}): ${s}`);
+    for (const s of r.missing) out.push(`missing (${name}): ${s}`);
+  }
+  out.push(...errors);
+  return out.join("\n") + "\n";
+}
+
 export async function main(argv: string[]): Promise<number> {
   const { values, positionals } = parseArgs({
     args: argv,
@@ -121,6 +143,7 @@ export async function main(argv: string[]): Promise<number> {
       json: { type: "boolean" },
       apply: { type: "boolean" },
       offsets: { type: "string" },
+      labels: { type: "string" },
     },
   });
   const [command, folder] = positionals;
@@ -128,7 +151,7 @@ export async function main(argv: string[]): Promise<number> {
     process.stdout.write(HELP);
     return 0;
   }
-  if (!["scan", "previews", "metrics", "groups", "cull"].includes(command) || !folder) {
+  if (!["scan", "previews", "metrics", "groups", "cull", "eval"].includes(command) || !folder) {
     process.stderr.write(`faucet: unknown command or missing folder\n\n${HELP}`);
     return 2;
   }
@@ -139,6 +162,13 @@ export async function main(argv: string[]): Promise<number> {
   }
   const et = new ExifTool();
   try {
+    if (command === "eval") {
+      const labels = validateLabels(JSON.parse(readFileSync(values.labels ?? path.join(root, "labels.json"), "utf8")));
+      const { report, errors } = await runEval(root, labels, et);
+      const errLines = errors.map((e) => `error: ${path.relative(root, e.path)}: ${e.error}`);
+      process.stdout.write(values.json ? JSON.stringify({ ...report, errors }, null, 2) + "\n" : evalTable(report, errLines));
+      return 0;
+    }
     if (command === "cull") {
       const cameraOffsets = values.offsets ? (JSON.parse(readFileSync(values.offsets, "utf8")) as Record<string, number>) : undefined;
       const abort = new AbortController();
